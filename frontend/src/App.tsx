@@ -21,6 +21,7 @@ import { RoadmapDetailPage } from './pages/RoadmapDetailPage';
 import { GoalsPage } from './pages/GoalsPage';
 import { SavedVaultPage } from './pages/SavedVaultPage';
 import { NotificationsPage } from './pages/NotificationsPage';
+import { MessagesPage } from './pages/MessagesPage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { PublicProfilePage } from './pages/PublicProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -71,6 +72,7 @@ export default function App() {
           <Route path="/challenges" element={<Protected><ChallengesPage /></Protected>} />
           <Route path="/saved" element={<Protected><SavedVaultPage /></Protected>} />
           <Route path="/notifications" element={<Protected><NotificationsPage /></Protected>} />
+          <Route path="/messages" element={<Protected><MessagesPage /></Protected>} />
           <Route path="/profile" element={<Protected><UserProfilePage /></Protected>} />
           <Route path="/profile/:profileId" element={<Protected><PublicProfilePage /></Protected>} />
           <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />

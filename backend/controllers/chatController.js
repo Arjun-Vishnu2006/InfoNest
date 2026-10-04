@@ -1,9 +1,43 @@
 const asyncHandler = require('express-async-handler');
 const Chat = require('../models/Chat');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
+
+const isObjectId = (value) => require('mongoose').Types.ObjectId.isValid(value);
+
+const getInbox = asyncHandler(async (req, res) => {
+  const messages = await Chat.find({ $or: [{ senderId: req.user._id }, { receiverId: req.user._id }] })
+    .sort({ createdAt: -1 })
+    .populate('senderId', 'name profilePicture')
+    .populate('receiverId', 'name profilePicture');
+  const conversations = new Map();
+  for (const message of messages) {
+    const sender = message.senderId;
+    const receiver = message.receiverId;
+    if (!sender || !receiver) continue;
+    const other = sender._id.toString() === req.user._id.toString() ? receiver : sender;
+    const key = other._id.toString();
+    if (!conversations.has(key)) conversations.set(key, { user: other, latestMessage: message, unreadCount: 0 });
+    if (receiver._id.toString() === req.user._id.toString() && message.status !== 'read' && message.status !== 'deleted') conversations.get(key).unreadCount += 1;
+  }
+  res.json({ success: true, count: conversations.size, data: [...conversations.values()] });
+});
 
 const sendMessage = asyncHandler(async (req, res) => {
   const { receiverId, message } = req.body;
+
+  if (!isObjectId(receiverId)) {
+    res.status(400);
+    throw new Error('A valid receiverId is required');
+  }
+  if (typeof message !== 'string' || !message.trim() || message.trim().length > 2000) {
+    res.status(400);
+    throw new Error('Message must contain 1 to 2000 characters');
+  }
+  if (receiverId === req.user._id.toString()) {
+    res.status(400);
+    throw new Error('You cannot message yourself');
+  }
 
   const receiver = await User.findById(receiverId);
 
@@ -15,8 +49,15 @@ const sendMessage = asyncHandler(async (req, res) => {
   const chat = await Chat.create({
     senderId: req.user._id,
     receiverId,
-    message,
+    message: message.trim(),
     status: 'sent',
+  });
+
+  await Notification.create({
+    userId: receiverId,
+    message: `${req.user.name || 'Someone'} sent you a message`,
+    type: 'chat',
+    link: '/messages',
   });
 
   res.status(201).json({
@@ -28,6 +69,11 @@ const sendMessage = asyncHandler(async (req, res) => {
 
 const getConversation = asyncHandler(async (req, res) => {
   const { userId } = req.params;
+
+  if (!isObjectId(userId)) {
+    res.status(400);
+    throw new Error('A valid userId is required');
+  }
 
   const messages = await Chat.find({
     $or: [
@@ -53,6 +99,10 @@ const getConversation = asyncHandler(async (req, res) => {
 });
 
 const markMessageRead = asyncHandler(async (req, res) => {
+  if (!isObjectId(req.params.id)) {
+    res.status(400);
+    throw new Error('A valid message id is required');
+  }
   const chat = await Chat.findById(req.params.id);
 
   if (!chat) {
@@ -76,6 +126,10 @@ const markMessageRead = asyncHandler(async (req, res) => {
 });
 
 const deleteMessage = asyncHandler(async (req, res) => {
+  if (!isObjectId(req.params.id)) {
+    res.status(400);
+    throw new Error('A valid message id is required');
+  }
   const chat = await Chat.findById(req.params.id);
 
   if (!chat) {
@@ -98,6 +152,7 @@ const deleteMessage = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  getInbox,
   sendMessage,
   getConversation,
   markMessageRead,

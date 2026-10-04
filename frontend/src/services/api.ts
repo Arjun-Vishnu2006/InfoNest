@@ -1,4 +1,4 @@
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://127.0.0.1:5000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api/v1';
 
 type RequestOptions = RequestInit & { retry?: boolean };
 
@@ -152,6 +152,18 @@ export const interactionsApi = {
 export const reviewsApi = {
   forRoadmap: (roadmapId: string) => request(`/reviews/roadmap/${encodeURIComponent(roadmapId)}`),
   create: (data: unknown) => json('POST', '/reviews', data),
+};
+
+// =====================================================
+// USER-TO-USER MESSAGES (separate from Cosmos AI)
+// =====================================================
+
+export const chatApi = {
+  inbox: () => request('/chats'),
+  sendMessage: (receiverId: string, message: string) => json('POST', '/chats', { receiverId, message }),
+  getConversation: (userId: string) => request(`/chats/conversation/${encodeURIComponent(userId)}`),
+  markMessageRead: (id: string) => json('PATCH', `/chats/${encodeURIComponent(id)}/read`),
+  deleteMessage: (id: string) => request(`/chats/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 };
 
 export default { request };

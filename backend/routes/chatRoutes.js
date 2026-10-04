@@ -2,6 +2,7 @@ const express = require('express');
 
 const {
   sendMessage,
+  getInbox,
   getConversation,
   markMessageRead,
   deleteMessage,
@@ -12,6 +13,8 @@ const { protect } = require('../middleware/auth');
 const router = express.Router();
 
 router.use(protect);
+
+router.get('/', getInbox);
 
 router.post('/', sendMessage);
 

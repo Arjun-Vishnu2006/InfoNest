@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import confetti from 'canvas-confetti';
 import {
   UserRole,
+  CurrentUser,
   Post,
   Story,
   Course,
@@ -20,7 +21,6 @@ import {
   KnowledgeProof,
   KnowledgeReactionType
 } from '../types';
-import { CURRENT_USER } from '../data/mockData';
 import { sounds } from '../services/soundManager';
 import { usersApi, goalsApi, contentApi, roadmapsApi, notificationsApi } from '../services/api';
 import { useAuth } from './AuthContext';
@@ -29,7 +29,7 @@ interface AppContextType {
   role: UserRole;
   setRole: (role: UserRole) => void;
   toggleRole: () => void;
-  currentUser: typeof CURRENT_USER;
+  currentUser: CurrentUser;
   creators: Creator[];
   posts: Post[];
   stories: Story[];
@@ -116,7 +116,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const EMPTY_CURRENT_USER: typeof CURRENT_USER = {
+const EMPTY_CURRENT_USER: CurrentUser = {
   id: '',
   username: '',
   name: '',
@@ -145,7 +145,7 @@ const EMPTY_CURRENT_USER: typeof CURRENT_USER = {
   skills: []
 };
 
-const mapBackendUser = (u: any): typeof CURRENT_USER => ({
+const mapBackendUser = (u: any): CurrentUser => ({
   ...EMPTY_CURRENT_USER,
   id: u?._id || u?.id || '',
   name: u?.name || '',
@@ -278,7 +278,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // 2. Data States — ALL initialized empty, loaded from backend APIs
   const { user: authUser } = useAuth();
-  const [currentUser, setCurrentUser] = useState<typeof CURRENT_USER>(EMPTY_CURRENT_USER);
+  const [currentUser, setCurrentUser] = useState<CurrentUser>(EMPTY_CURRENT_USER);
 
   // AuthContext is the single source of truth for the signed-in account.
   useEffect(() => {

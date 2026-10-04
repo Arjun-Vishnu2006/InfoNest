@@ -1,5 +1,34 @@
 export type UserRole = 'student' | 'creator';
 
+export interface CurrentUser {
+  id: string;
+  username: string;
+  name: string;
+  handle: string;
+  avatar: string;
+  coverImage: string;
+  role: string;
+  bio: string;
+  headline: string;
+  location: string;
+  about: string;
+  education: string;
+  experience: string;
+  certificates: string[];
+  email: string;
+  phone: string;
+  reputationScore: number;
+  isVerified: boolean;
+  expertiseArea: string;
+  knowledgeTokens: number;
+  knowledgeScore: number;
+  streakDays: number;
+  enrolledCoursesCount: number;
+  activeRoadmapsCount: number;
+  completedCertificatesCount: number;
+  skills: string[];
+}
+
 export interface ToastNotification {
   id: string;
   message: string;
@@ -24,7 +53,7 @@ export interface Creator {
   isFollowed: boolean;
   verified: boolean;
   knowledgeTokens: number;
-  knowledgeScore: number; // InfoNest platform contribution score
+  knowledgeScore: number;
   expertiseTags: string[];
   recentDropsCount?: number;
   weeklyGrowth?: {
@@ -34,7 +63,13 @@ export interface Creator {
   };
 }
 
-export type SparkCategory = 'Flashcard' | 'Quick Tip' | 'Mini Lecture' | 'Thought' | 'Challenge' | 'Research';
+export type SparkCategory =
+  | 'Flashcard'
+  | 'Quick Tip'
+  | 'Mini Lecture'
+  | 'Thought'
+  | 'Challenge'
+  | 'Research';
 
 export interface StorySlide {
   id: string;
@@ -146,7 +181,12 @@ export type PostType =
   | 'carousel'
   | 'quiz';
 
-export type KnowledgeReactionType = 'insightful' | 'useful' | 'mindOpening' | 'practical' | 'like';
+export type KnowledgeReactionType =
+  | 'insightful'
+  | 'useful'
+  | 'mindOpening'
+  | 'practical'
+  | 'like';
 
 export interface KnowledgeReactions {
   insightful: number;
@@ -175,9 +215,9 @@ export interface Post {
   id: string;
   creatorId: string;
   creator: Creator;
-  coCreator?: Creator; // InfoNest Co-Creator Collaboration
+  coCreator?: Creator;
   type: PostType;
-  dropTypeLabel?: string; // e.g. "KNOWLEDGE DROP", "RESEARCH DROP"
+  dropTypeLabel?: string;
   title: string;
   caption: string;
   tags: string[];
@@ -188,12 +228,8 @@ export interface Post {
   sharesCount: number;
   isLiked: boolean;
   isBookmarked: boolean;
-
-  // Knowledge Reactions System
   reactions: KnowledgeReactions;
   userReaction?: KnowledgeReactionType;
-
-  // Specific payloads
   carouselImages?: string[];
   lectureData?: LectureData;
   thoughtData?: ThoughtData;
@@ -297,12 +333,18 @@ export interface UserGoal {
   streakDays: number;
   completedTasks: number;
   totalTasks: number;
-  weeklyHistory: number[]; // Hours logged per day Mon-Sun
+  weeklyHistory: number[];
 }
 
 export interface NotificationItem {
   id: string;
-  category: 'social' | 'learning' | 'creator' | 'goals' | 'system' | 'missions';
+  category:
+    | 'social'
+    | 'learning'
+    | 'creator'
+    | 'goals'
+    | 'system'
+    | 'missions';
   title: string;
   description: string;
   timestamp: string;
@@ -328,8 +370,6 @@ export interface AnalyticsData {
   enrollments: { date: string; count: number }[];
   audienceActivity: { time: string; active: number }[];
 }
-
-// ---------------- SIGNATURE INFONEST DOMAIN TYPES ----------------
 
 export interface KnowledgeTrailItem {
   id: string;

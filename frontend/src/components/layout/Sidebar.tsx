@@ -17,7 +17,8 @@ import {
   GitPullRequest,
   Layers,
   Radio,
-  Zap
+  Zap,
+  MessageCircle
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { sounds } from '../../services/soundManager';
@@ -27,6 +28,7 @@ export const Sidebar: React.FC = () => {
 
   const studentNavItems = [
     { to: '/feed', label: 'The Nest', icon: Sparkles },
+    { to: '/messages', label: 'Messages', icon: MessageCircle },
     { to: '/explore', label: 'Explore Cosmos', icon: Compass },
     { to: '/roadmaps', label: 'Learning Roadmaps', icon: Map, badge: '3 active' },
     { to: '/courses', label: 'Course Vault', icon: BookOpen, badge: 'Vault' },
@@ -40,6 +42,7 @@ export const Sidebar: React.FC = () => {
 
   const creatorNavItems = [
     { to: '/creator/dashboard', label: 'Creator Pulse & Analytics', icon: LayoutDashboard },
+    { to: '/messages', label: 'Messages', icon: MessageCircle },
     { to: '/creator/content', label: 'Content Manager', icon: FolderKanban },
     { to: '/creator/studio', label: 'Publishing Studio', icon: Edit3, badge: 'Studio' },
     { to: '/create/post', label: 'Create Post Drop', icon: PlusSquare },
