@@ -10,7 +10,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
-  const { login, loading } = useAuth();
+  const { login, demoLogin, loading } = useAuth();
   const nav = useNavigate();
 
   async function submit(e) {
@@ -38,6 +38,7 @@ export default function Login() {
           <label>Password<div className="inputIconWrap"><LockKeyhole size={16}/><input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required placeholder="Your password" /></div>{fieldErrors.password && <small className="fieldError">{fieldErrors.password}</small>}</label>
           <button className="btn primary full cuteBtn" disabled={loading}>{loading ? "Signing in…" : "Login to InfoNest →"}</button>
         </form>
+        {import.meta.env.VITE_DEMO_MODE !== 'false' && <button type="button" onClick={() => { demoLogin(); nav('/feed'); }} className="btn full mt-3 border border-purple-400/30 text-purple-200">Continue with Demo Account</button>}
         <div className="authMiniNote">🔒 Email + phone number + password keeps your account tied to your verified phone.</div>
         <p className="center muted">New to InfoNest? <Link to="/register">Create an account</Link></p>
       </div>

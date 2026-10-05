@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrainCircuit, ChevronRight, Loader2, Sparkles, UserRound } from 'lucide-react';
 import { aiApi } from '../../services/api';
+import { useApp } from '../../context/AppContext';
 
 type Recommendation = {
   id?: string;
@@ -24,6 +25,7 @@ type Recommendations = {
 };
 
 export const AIRecommendationsPanel: React.FC = () => {
+  const { goals } = useApp();
   const [data, setData] = useState<Recommendations | null>(null);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
@@ -35,7 +37,10 @@ export const AIRecommendationsPanel: React.FC = () => {
       const result = await aiApi.recommendations();
       setData(result?.data?.recommendations || null);
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Recommendations are temporarily unavailable.');
+      console.error('InfoNest recommendations failed:', err);
+      const goal = goals.find(item => item.status === 'active');
+      const nextStep = goal ? `${Number(goal.progressPercent || 0) >= 65 ? 'Complete' : 'Continue'} ${goal.category === 'Cybersecurity' ? 'Web Security' : `${goal.category || 'your'} foundations`}` : 'Add a learning goal to get a personalized next step.';
+      setData({ summary: 'Your learning plan is ready. Recommendations update from your active goals.', whatNext: [{ title: nextStep, reason: goal ? `${goal.title || goal.roadmapTitle} is ${Math.round(goal.progressPercent || 0)}% complete.` : 'Choose a goal to shape your next steps.' }], goalInsights: goal ? [{ goalId:goal.id, goalTitle:goal.title || goal.roadmapTitle, progressPercent:goal.progressPercent || 0, nextStep, reason:'Based on your current goal progress.' }] : [], content:[], creators:[] });
     } finally {
       setBusy(false);
     }
@@ -51,7 +56,7 @@ export const AIRecommendationsPanel: React.FC = () => {
             <BrainCircuit className="w-4 h-4" /> AI Learning Navigator
           </div>
           <h3 className="mt-2 text-xl font-black text-white">What Next?</h3>
-          <p className="mt-1 text-xs text-slate-400">Grok checks your active goals, roadmap progress, and current InfoNest content before recommending your next steps.</p>
+          <p className="mt-1 text-xs text-slate-400">Groq can enhance recommendations from your active goals and InfoNest content.</p>
         </div>
         <button onClick={() => void load()} disabled={busy} className="shrink-0 p-2 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 disabled:opacity-40" title="Refresh recommendations">
           <Sparkles className={`w-4 h-4 ${busy ? 'animate-pulse' : ''}`} />

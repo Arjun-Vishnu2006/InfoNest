@@ -9,13 +9,12 @@ import { AIRecommendationsPanel } from '../components/feed/AIRecommendationsPane
 
 export const FeedPage: React.FC = () => {
   const { posts } = useApp();
-  const [feedFilter, setFeedFilter] = useState<'all' | 'following' | 'knowledge' | 'lectures' | 'roadmaps' | 'challenges'>('all');
+  const [feedFilter, setFeedFilter] = useState<'all' | 'following' | 'knowledge' | 'lectures' | 'challenges'>('all');
 
   const filteredPosts = posts.filter(post => {
     if (feedFilter === 'following') return post.creator.isFollowed;
     if (feedFilter === 'knowledge') return post.type === 'knowledge' || post.type === 'carousel';
     if (feedFilter === 'lectures') return post.type === 'lecture';
-    if (feedFilter === 'roadmaps') return post.type === 'roadmap';
     if (feedFilter === 'challenges') return post.type === 'challenge';
     return true;
   });
@@ -50,7 +49,7 @@ export const FeedPage: React.FC = () => {
             <p className="text-xs text-slate-400 font-mono mt-0.5">Your Knowledge Universe · Deep learning meets creator velocity.</p>
           </div>
           <div className="flex items-center p-1 bg-white/5 rounded-2xl border border-white/10 text-xs font-mono overflow-x-auto scrollbar-none">
-            {[['all','All Cosmos'],['following','Following'],['knowledge','Knowledge'],['lectures','Lectures'],['roadmaps','Roadmaps'],['challenges','Challenges']].map(([id,label]) => (
+            {[['all','All Cosmos'],['following','Following'],['knowledge','Knowledge'],['lectures','Lectures'],['challenges','Challenges']].map(([id,label]) => (
               <button key={id} onClick={() => { sounds.playClick(); setFeedFilter(id as any); }} className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${feedFilter === id ? 'bg-purple-600 text-white font-bold shadow-glow-purple' : 'text-slate-400 hover:text-white'}`}>{label}</button>
             ))}
           </div>
@@ -69,7 +68,7 @@ export const FeedPage: React.FC = () => {
                   <UploadCloud className="w-7 h-7 text-purple-300" />
                 </div>
                 <h3 className="text-lg font-bold text-white">Your knowledge space is ready</h3>
-                <p className="text-sm text-slate-400 max-w-lg mx-auto">No learning content has been added yet. Creators can upload courses, roadmaps, documents and knowledge posts from the Creator workspace.</p>
+                <p className="text-sm text-slate-400 max-w-lg mx-auto">Creators can share courses, documents, and knowledge posts from the Creator workspace.</p>
                 <p className="text-xs text-cyan-300 font-mono">Start empty · Add real project data · Grow the Nest</p>
               </>
             ) : (

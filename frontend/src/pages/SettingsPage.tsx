@@ -54,23 +54,6 @@ export const SettingsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Ambient Space Drone */}
-            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-4">
-              <div>
-                <h4 className="text-sm font-bold text-white">Futuristic Space Drone Atmosphere</h4>
-                <p className="text-xs text-slate-400 mt-0.5">Subtle harmonic low-frequency synthesizer for focus and immersion.</p>
-              </div>
-              <button
-                onClick={toggleAmbient}
-                className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all ${
-                  isAmbientPlaying
-                    ? 'bg-cyan-500 text-black shadow-glow-cyan'
-                    : 'bg-white/5 text-slate-400 border border-white/10'
-                }`}
-              >
-                {isAmbientPlaying ? 'ACTIVE' : 'OFF'}
-              </button>
-            </div>
           </div>
         </div>
 
@@ -92,7 +75,7 @@ export const SettingsPage: React.FC = () => {
             >
               <h4 className="text-sm font-bold text-white mb-1">🎓 Learner Mode</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Feed, Course Vault, 3D Roadmaps, Goal Tracking, and personalized study cosmos.
+                Feed, Course Vault, Goal Tracking, and personalized study cosmos.
               </p>
             </button>
 

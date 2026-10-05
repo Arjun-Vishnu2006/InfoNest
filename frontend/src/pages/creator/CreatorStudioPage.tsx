@@ -19,7 +19,7 @@ export const CreatorStudioPage: React.FC = () => {
   const navigate = useNavigate();
   const { createPost, currentUser } = useApp();
 
-  const [postType, setPostType] = useState<'carousel' | 'lecture' | 'thought' | 'roadmap'>('thought');
+  const [postType, setPostType] = useState<'carousel' | 'lecture' | 'thought'>('thought');
   const [title, setTitle] = useState('Sub-Millisecond Kernel Socket Ingress with eBPF');
   const [caption, setCaption] = useState('Eliminating Linux context switches by filtering packets directly on NIC ingress rings.');
   const [tagsInput, setTagsInput] = useState('#eBPF #DistributedSystems #LinuxKernel');
@@ -97,7 +97,6 @@ export const CreatorStudioPage: React.FC = () => {
                 { id: 'thought', label: 'Thought & Code', icon: FileCode },
                 { id: 'carousel', label: 'Visual Carousel', icon: Image },
                 { id: 'lecture', label: 'Video Lecture', icon: Video },
-                { id: 'roadmap', label: 'Roadmap Embed', icon: Map }
               ].map(t => (
                 <button
                   key={t.id}

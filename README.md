@@ -4,17 +4,16 @@ InfoNest is a full-stack knowledge sharing and learning platform with AI-powered
 
 ## Features
 
-- **AI Learning Assistant (Cosmos AI)** — Powered by xAI Grok, personalized to each user's goals, skills, and progress
+- **AI Learning Assistant (Cosmos AI)** — Powered by Groq when configured, with friendly offline fallback
 - **Goal Management** — Create and track learning goals with study progress logging
-- **AI Roadmap Generation** — Ask AI to generate personalized learning roadmaps based on your existing goals and progress
-- **What Next? Navigator** — AI-powered recommendations for your next learning steps
+- **What Next? Navigator** — Goal-based recommendations with a deterministic offline fallback
 - **Content Sharing** — Share articles, guides, and learning materials
 - **Creator Profiles** — Content creators can publish and manage educational content
 - **Personalized Feed** — Content recommendations based on your skills and interests
 - **Profile Improvement Suggestions** — AI analyzes your profile and suggests improvements
-- **Content Summarization** — Attach files to the AI chat for analysis and summarization
+- **Presentation Mode** — Fictional seed content for courses, creators, goals, messages, and Orbit sessions
 - **Real-time Notifications** — System notifications stored in MongoDB
-- **Search** — Global search across users, content, roadmaps, and goals
+- **Search** — Global search across users, content, and courses
 
 ## Architecture
 
@@ -23,7 +22,7 @@ React Frontend (Vite + TypeScript)
          ↕
 Node.js / Express Backend
          ↕
-   MongoDB Atlas        xAI / Grok API
+   MongoDB Atlas        Groq API (optional)
 ```
 
 - All data flows through the backend REST API
@@ -40,7 +39,7 @@ Node.js / Express Backend
 - Node.js 18+
 - npm
 - MongoDB Atlas account (or local MongoDB)
-- xAI API key (for AI features) — get one at https://console.x.ai
+- Groq API key (optional; chat enhancement) — create one in the Groq console
 - Gmail account with App Password (for email OTP)
 
 ### Backend
@@ -74,8 +73,8 @@ Node.js / Express Backend
    JWT_ACCESS_EXPIRES_IN=15m
    JWT_REFRESH_EXPIRES_IN=7d
 
-   XAI_API_KEY=<your_xai_api_key>
-   GROK_MODEL=grok-4.7
+   GROQ_API_KEY=<your_groq_api_key>
+   GROQ_MODEL=llama-3.3-70b-versatile
 
    CLIENT_URL=http://localhost:5173
    ```
@@ -135,8 +134,8 @@ Node.js / Express Backend
 | `JWT_REFRESH_SECRET` | ✅ | Secret for signing refresh tokens |
 | `JWT_ACCESS_EXPIRES_IN` | ❌ | Access token expiry (default: 15m) |
 | `JWT_REFRESH_EXPIRES_IN` | ❌ | Refresh token expiry (default: 7d) |
-| `XAI_API_KEY` | ✅ | xAI API key for Grok AI |
-| `GROK_MODEL` | ❌ | Grok model name (default: grok-4.7) |
+| `GROQ_API_KEY` | ❌ | Groq API key; AI chat is optional |
+| `GROQ_MODEL` | ❌ | Groq model (default: llama-3.3-70b-versatile) |
 | `CLIENT_URL` | ❌ | Frontend URL for CORS |
 
 ### Frontend (`frontend/.env`)
@@ -151,19 +150,22 @@ Node.js / Express Backend
 
 ### Backend
 
-1. Set `NODE_ENV=production` in your deployment environment
-2. Configure all required environment variables listed above
-3. Use `npm start` (runs `node server.js`)
-4. Set `CLIENT_URL` to your production frontend URL for CORS
+1. Create a Render Web Service with `backend` as the root directory.
+2. Set build command `npm install` and start command `npm start`.
+3. Set `NODE_ENV=production`, `MONGO_URI`, JWT secrets, and `CLIENT_URL` (the deployed frontend origin). Add `GROQ_API_KEY` optionally.
+4. Deploy and verify `/api/v1/health` returns success.
 
 ### Frontend
 
 1. Build the production bundle:
    ```bash
    cd frontend
-   VITE_API_URL=https://your-backend-url.com/api/v1 npm run build
+   # PowerShell
+   $env:VITE_API_URL="https://<render-backend>.onrender.com/api/v1"
+   npm run build
    ```
-2. Deploy the `dist/` folder to any static hosting (Vercel, Netlify, etc.)
+2. In Render, create a **Static Site** from this repository with root directory `frontend`, build command `npm install && npm run build`, and publish directory `dist`.
+3. Set `VITE_API_URL=https://<render-backend>.onrender.com/api/v1` on the Static Site, then deploy. Add the deployed static-site origin to the backend `CLIENT_URL` and redeploy the backend.
 
 ### Security Checklist
 
@@ -180,9 +182,8 @@ Node.js / Express Backend
 
 | Endpoint | Method | Description |
 |---|---|---|
-| `/api/v1/ai/chat` | POST | Chat with Cosmos AI (supports file uploads) |
+| `/api/v1/ai/chat` | POST | Chat with Cosmos AI (Groq text completion) |
 | `/api/v1/ai/recommendations` | GET | Personalized What Next, content, and creator recommendations |
-| `/api/v1/ai/save-roadmap` | POST | Save an AI-generated roadmap to MongoDB |
 | `/api/v1/ai/profile-suggestions` | GET | AI analysis of your profile with improvement suggestions |
 
 All AI endpoints require authentication and have rate limiting (30 requests / 15 min).
@@ -192,6 +193,6 @@ All AI endpoints require authentication and have rate limiting (30 requests / 15
 ## Important
 
 - Never commit or share `.env` files
-- The database starts empty — collections are created naturally when real users register and create data
-- When the database is empty, the UI shows proper empty states instead of fake data
-- AI features require a valid `XAI_API_KEY`
+- Demo mode is enabled by default; set `VITE_DEMO_MODE=false` to hide demo sign-in and demo seeds.
+- Demo messages and goal changes are stored in the browser; real accounts continue to use the backend.
+- AI chat requires a running backend and `GROQ_API_KEY`; the UI remains usable if Groq is unavailable.

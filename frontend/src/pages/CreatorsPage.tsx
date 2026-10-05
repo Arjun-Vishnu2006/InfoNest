@@ -28,7 +28,7 @@ export const CreatorsPage: React.FC = () => {
             Discover Verified Educators
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-            Follow research scientists, principal architects, and creative technologists sharing deep technical insights, masterclasses, and roadmaps.
+            Follow research scientists, principal architects, and creative technologists sharing deep technical insights and masterclasses.
           </p>
         </div>
 

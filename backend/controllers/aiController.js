@@ -4,74 +4,52 @@ const Goal = require('../models/Goal');
 const Roadmap = require('../models/Roadmap');
 const Content = require('../models/Content');
 
-const XAI_BASE_URL = 'https://api.x.ai/v1';
 const MAX_MESSAGE_LENGTH = 6000;
 
-const getXaiKey = () => {
-  if (!process.env.XAI_API_KEY) {
-    const error = new Error('XAI_API_KEY is not configured. Add it to backend/.env.');
+const getGroqKey = () => {
+  if (!process.env.GROQ_API_KEY) {
+    const error = new Error('AI is temporarily unavailable. Please try again shortly.');
     error.status = 503;
     throw error;
   }
-  return process.env.XAI_API_KEY;
+  return process.env.GROQ_API_KEY;
 };
 
-const extractOutputText = (payload) => {
-  if (typeof payload?.output_text === 'string') return payload.output_text;
-  const chunks = [];
-  for (const item of payload?.output || []) {
-    for (const content of item?.content || []) {
-      if (typeof content?.text === 'string') chunks.push(content.text);
-    }
-  }
-  return chunks.join('\n').trim();
-};
-
-const callGrok = async ({ instructions, input, files = [] }) => {
-  const apiKey = getXaiKey();
-  const content = [{ type: 'input_text', text: input }];
-
-  for (const file of files) {
-    const uploadForm = new FormData();
-    uploadForm.append('file', new Blob([file.buffer], { type: file.mimetype || 'application/octet-stream' }), file.originalname);
-
-    const uploadResponse = await fetch(`${XAI_BASE_URL}/files`, {
+const callGroq = async ({ instructions, input, files = [] }) => {
+  const apiKey = getGroqKey();
+  const attachmentNote = files.length ? `\n\nAttached filenames: ${files.map(file => file.originalname).join(', ')}. File contents are not available to this text endpoint; ask the user to paste relevant excerpts.` : '';
+  let response;
+  try {
+    response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: uploadForm,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+        messages: [{ role: 'system', content: instructions }, { role: 'user', content: `${input}${attachmentNote}` }],
+        temperature: 0.4,
+      }),
+      signal: AbortSignal.timeout(25000),
     });
-
-    if (!uploadResponse.ok) {
-      const detail = await uploadResponse.text();
-      throw new Error(`Grok file upload failed: ${detail.slice(0, 500)}`);
-    }
-
-    const uploaded = await uploadResponse.json();
-    content.push({ type: 'input_file', file_id: uploaded.id });
+  } catch (cause) {
+    console.error('Groq API connection failed:', cause.message);
+    const error = new Error('AI is temporarily unavailable. Please try again shortly.');
+    error.status = 503;
+    throw error;
   }
-
-  const response = await fetch(`${XAI_BASE_URL}/responses`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: process.env.GROK_MODEL || 'grok-4.7',
-      instructions,
-      input: [{ role: 'user', content }],
-    }),
-  });
 
   if (!response.ok) {
     const detail = await response.text();
-    const error = new Error(`Grok API request failed: ${detail.slice(0, 700)}`);
+    console.error('Groq API request failed:', detail.slice(0, 700));
+    const error = new Error('AI is temporarily unavailable. Please try again shortly.');
     error.status = response.status >= 400 && response.status < 500 ? 502 : 503;
     throw error;
   }
 
   const payload = await response.json();
-  return extractOutputText(payload) || 'I could not generate a response for that request.';
+  return payload?.choices?.[0]?.message?.content?.trim() || 'I could not generate a response for that request.';
 };
 
 const buildUserContext = async (userId) => {
@@ -194,9 +172,9 @@ const chatWithAI = asyncHandler(async (req, res) => {
 
   const context = await buildUserContext(req.user._id);
   const instructions = [
-    'You are Cosmos AI, the InfoNest learning assistant powered by Grok.',
+    'You are Cosmos AI, the InfoNest learning assistant powered by Groq.',
     'Answer general questions normally and clearly.',
-    'You can create learning roadmaps, explain topics, suggest profile improvements, summarize attached learning material, and answer study questions.',
+    'You can explain topics, suggest profile improvements, summarize user-provided learning notes, and answer study questions.',
     'When the user asks about their learning, goals, roadmap, progress, next steps, content, or creators, use the supplied InfoNest context.',
     'When generating a roadmap, compare it with the user\'s existing active goals and linked roadmaps. Avoid blindly repeating the same path; explain when a new roadmap is a continuation, an alternative path, or a specialization.',
     'Treat goal progressPercent, completedHours, target dates, and completed roadmap steps as the current state. Do not invent progress.',
@@ -205,7 +183,7 @@ const chatWithAI = asyncHandler(async (req, res) => {
     contextText(context),
   ].join('\n\n');
 
-  const answer = await callGrok({
+  const answer = await callGroq({
     instructions,
     input: message || 'Analyze the attached learning material and explain the important points clearly for a student.',
     files: files.slice(0, 5),
@@ -228,7 +206,7 @@ const getRecommendations = asyncHandler(async (req, res) => {
   const context = await buildUserContext(req.user._id);
 
   const instructions = [
-    'You are the InfoNest recommendation engine powered by Grok.',
+    'You are the InfoNest recommendation engine powered by Groq.',
     'Use the authenticated user context and the available database candidates below.',
     'Return ONLY valid JSON. No markdown fences and no extra text.',
     'Schema: {"summary": string, "whatNext": [{"title": string, "reason": string}], "content": [{"id": string, "title": string, "reason": string}], "creators": [{"id": string, "name": string, "reason": string}], "goalInsights": [{"goalId": string, "goalTitle": string, "progressPercent": number, "nextStep": string, "reason": string}]}',
@@ -239,7 +217,7 @@ const getRecommendations = asyncHandler(async (req, res) => {
     contextText(context),
   ].join('\n\n');
 
-  const raw = await callGrok({
+  const raw = await callGroq({
     instructions,
     input: 'Generate the latest personalized InfoNest recommendations from the current database context.',
   });
@@ -315,7 +293,7 @@ const getProfileSuggestions = asyncHandler(async (req, res) => {
   const context = await buildUserContext(req.user._id);
 
   const instructions = [
-    'You are the InfoNest profile improvement advisor powered by Grok.',
+    'You are the InfoNest profile improvement advisor powered by Groq.',
     'Analyze the user profile below and suggest specific, actionable improvements.',
     'Return ONLY valid JSON. No markdown fences and no extra text.',
     'Schema: {"suggestions": [{"category": string, "suggestion": string, "priority": "high"|"medium"|"low"}], "completenessScore": number, "summary": string}',
@@ -325,7 +303,7 @@ const getProfileSuggestions = asyncHandler(async (req, res) => {
     contextText(context),
   ].join('\n\n');
 
-  const raw = await callGrok({
+  const raw = await callGroq({
     instructions,
     input: 'Analyze my InfoNest profile and suggest improvements.',
   });

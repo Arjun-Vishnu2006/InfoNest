@@ -36,7 +36,8 @@ export const CosmicChatWidget: React.FC = () => {
       const answer = result?.data?.message || 'I could not generate a response.';
       setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', content: answer, files: result?.data?.files || [] }]);
     } catch (error: any) {
-      setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', content: `I couldn't reach the AI service. ${error?.response?.data?.message || error?.message || 'Please check the backend and Grok configuration.'}` }]);
+      console.error('InfoNest AI chat failed:', error);
+      setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', content: `The AI service is unavailable right now. I can still help you plan your learning: choose one small topic, study it for 25 minutes, then write down one practical takeaway. Please try Groq again in a moment.` }]);
     } finally {
       setBusy(false);
     }
@@ -67,7 +68,7 @@ export const CosmicChatWidget: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-3 text-xs text-slate-300">
               <div className="flex items-center gap-2 text-cyan-300 font-semibold"><Sparkles className="w-3.5 h-3.5" /> Ask, learn, plan</div>
-              <p className="mt-1 text-slate-400">Powered by Grok. Ask questions, build roadmaps, track learning, or attach study files for AI analysis.</p>
+              <p className="mt-1 text-slate-400">Powered by Groq. Ask questions, plan learning, or attach notes to discuss their key ideas.</p>
             </div>
             {messages.map(m => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -90,7 +91,7 @@ export const CosmicChatWidget: React.FC = () => {
               <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey} rows={2} placeholder="Ask Cosmos AI…" className="flex-1 resize-none bg-transparent outline-none text-sm text-white placeholder-slate-500 px-1 py-1" />
               <button onClick={() => void send()} disabled={busy || (!input.trim() && files.length === 0)} className="shrink-0 p-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 text-white disabled:opacity-40"><Send className="w-4 h-4" /></button>
             </div>
-            <div className="mt-1.5 text-[9px] text-slate-500 text-center">Files are sent securely through the InfoNest backend to the configured Grok service for analysis.</div>
+            <div className="mt-1.5 text-[9px] text-slate-500 text-center">Messages are sent securely through the InfoNest backend to Groq.</div>
           </div>
         </div>
       )}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useApp } from '../context/AppContext';
 import { sounds } from '../services/soundManager';
-import { Radio, Users, Sparkles, MessageSquare, ArrowRight, ShieldCheck, Flame } from 'lucide-react';
+import { Radio, Users, Sparkles, MessageSquare, ArrowRight, ShieldCheck, Flame, X } from 'lucide-react';
 
 export const OrbitRoomsPage: React.FC = () => {
   const { orbitRooms, joinOrbitRoom } = useApp();
@@ -130,6 +130,13 @@ export const OrbitRoomsPage: React.FC = () => {
           </div>
         )}
       </div>
+      {activeRoom && selectedRoomId && <div role="dialog" aria-modal="true" aria-label={activeRoom.name} className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="w-full max-w-3xl glass-panel rounded-3xl border border-cyan-400/30 overflow-hidden shadow-2xl">
+          <header className="p-5 border-b border-white/10 flex justify-between items-center"><div><p className="text-xs uppercase tracking-widest text-cyan-300">{activeRoom.activeNow ? '● LIVE · Presentation session' : activeRoom.tag}</p><h2 className="text-xl font-bold text-white mt-1">{activeRoom.name}</h2></div><button onClick={()=>setSelectedRoomId(null)} aria-label="Close session" className="p-2 rounded-xl bg-white/5"><X className="w-5 h-5"/></button></header>
+          <div className="aspect-video bg-gradient-to-br from-slate-900 via-indigo-950 to-cyan-950 flex flex-col items-center justify-center text-center p-8"><Radio className="w-12 h-12 text-cyan-300 mb-3 animate-pulse"/><p className="text-white text-lg font-semibold">{activeRoom.activeNow ? 'Live learning session is in progress' : 'You are registered for this session'}</p><p className="text-sm text-slate-300 mt-2 max-w-lg">{activeRoom.description} This presentation-safe session is simulated and does not require a stream host.</p><p className="text-xs text-cyan-200 mt-5">{activeRoom.activeNow.toLocaleString()} learners watching</p></div>
+          <div className="p-4 flex items-center justify-between text-xs text-slate-400"><span>Session chat · Welcome! Share a question with the group.</span><button onClick={()=>setSelectedRoomId(null)} className="px-4 py-2 rounded-xl bg-cyan-600 text-white font-semibold">Leave session</button></div>
+        </div>
+      </div>}
     </MainLayout>
   );
 };

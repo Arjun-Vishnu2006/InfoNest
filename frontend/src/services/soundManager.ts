@@ -262,7 +262,7 @@ class SoundManager {
     }
   }
 
-  // Toggle ambient space drone
+  // Toggle ambient sound
   public toggleAmbient(): boolean {
     this.initContext();
     if (!this.ctx) return false;

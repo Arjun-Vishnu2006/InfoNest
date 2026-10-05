@@ -26,6 +26,7 @@ interface AuthContextValue {
   loading: boolean;
   initializing: boolean;
   login: (data: unknown) => Promise<{ user: AuthUser; redirectTo?: string }>;
+  demoLogin: () => void;
   register: (data: unknown) => Promise<{ user: AuthUser }>;
   requestRegisterOtp: (data: unknown) => Promise<unknown>;
   logout: () => Promise<void>;
@@ -57,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUser = useCallback(async () => {
     if (!localStorage.getItem('infonest_token')) { setInitializing(false); return; }
+    if (localStorage.getItem('infonest_token') === 'infonest-demo-session') { setInitializing(false); return; }
     try { save(extractUser((await authApi.me()).data)); }
     catch { localStorage.removeItem('infonest_token'); save(null); }
     finally { setInitializing(false); }
@@ -80,6 +82,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally { setLoading(false); }
   };
 
+  const demoLogin = () => {
+    const demoUser: AuthUser = { _id:'infonest-demo-user', id:'infonest-demo-user', name:'Aarav Demo', email:'learner@infonest.demo', phone:'9000000000', role:'Learner', profilePicture:'/infonest-logo.png', headline:'Curious learner · InfoNest Demo', location:'Bengaluru', about:'Exploring cybersecurity, cloud, and modern web development.', expertiseArea:'Cybersecurity', skills:['Networking','Web Security','React'], reputationScore:1840, isVerified:true };
+    localStorage.setItem('infonest_token','infonest-demo-session');
+    localStorage.setItem('infonest_role','student');
+    save(demoUser);
+  };
+
   const register = async (data: unknown) => {
     setLoading(true);
     try {
@@ -99,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     save(null);
   };
 
-  return <AuthContext.Provider value={{ user, loading, initializing, login, register, requestRegisterOtp: authApi.requestRegisterOtp, logout, fetchUser }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, loading, initializing, login, demoLogin, register, requestRegisterOtp: authApi.requestRegisterOtp, logout, fetchUser }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

@@ -16,8 +16,6 @@ import { CreatorProfilePage } from './pages/CreatorProfilePage';
 import { CoursesPage } from './pages/CoursesPage';
 import { CourseDetailPage } from './pages/CourseDetailPage';
 import { LecturePlayerPage } from './pages/LecturePlayerPage';
-import { RoadmapsPage } from './pages/RoadmapsPage';
-import { RoadmapDetailPage } from './pages/RoadmapDetailPage';
 import { GoalsPage } from './pages/GoalsPage';
 import { SavedVaultPage } from './pages/SavedVaultPage';
 import { NotificationsPage } from './pages/NotificationsPage';
@@ -34,7 +32,6 @@ import { CreatorContentPage } from './pages/creator/CreatorContentPage';
 import { CreatorStudioPage } from './pages/creator/CreatorStudioPage';
 import { CreatePostPage } from './pages/creator/CreatePostPage';
 import { CreateCoursePage } from './pages/creator/CreateCoursePage';
-import { CreateRoadmapPage } from './pages/creator/CreateRoadmapPage';
 
 const Protected = ({ children }: { children: React.ReactNode }) => <ProtectedRoute>{children}</ProtectedRoute>;
 
@@ -63,8 +60,8 @@ export default function App() {
           <Route path="/course/:courseId" element={<Protected><CourseDetailPage /></Protected>} />
           <Route path="/course/:courseId/learn" element={<Navigate to="/lecture/lec_1" replace />} />
           <Route path="/lecture/:lectureId" element={<Protected><LecturePlayerPage /></Protected>} />
-          <Route path="/roadmaps" element={<Protected><RoadmapsPage /></Protected>} />
-          <Route path="/roadmap/:roadmapId" element={<Protected><RoadmapDetailPage /></Protected>} />
+          <Route path="/roadmaps" element={<Navigate to="/goals" replace />} />
+          <Route path="/roadmap/:roadmapId" element={<Navigate to="/goals" replace />} />
           <Route path="/goals" element={<Protected><GoalsPage /></Protected>} />
           <Route path="/progress" element={<Navigate to="/goals" replace />} />
           <Route path="/missions" element={<Protected><MissionsPage /></Protected>} />
@@ -83,7 +80,7 @@ export default function App() {
           <Route path="/creator/studio" element={<Protected><CreatorStudioPage /></Protected>} />
           <Route path="/create/post" element={<Protected><CreatePostPage /></Protected>} />
           <Route path="/create/course" element={<Protected><CreateCoursePage /></Protected>} />
-          <Route path="/create/roadmap" element={<Protected><CreateRoadmapPage /></Protected>} />
+          <Route path="/create/roadmap" element={<Navigate to="/goals" replace />} />
           <Route path="*" element={<Navigate to="/feed" replace />} />
         </Routes>
       </AppProvider>

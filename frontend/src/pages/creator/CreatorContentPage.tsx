@@ -16,7 +16,7 @@ import {
 
 export const CreatorContentPage: React.FC = () => {
   const { creatorContent, deleteContentItem } = useApp();
-  const [activeFilter, setActiveFilter] = useState<'all' | 'post' | 'lecture' | 'course' | 'roadmap' | 'draft'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'post' | 'lecture' | 'course' | 'draft'>('all');
 
   const filteredItems = activeFilter === 'all'
     ? creatorContent
@@ -57,7 +57,6 @@ export const CreatorContentPage: React.FC = () => {
             { id: 'post', label: 'Posts & Carousels' },
             { id: 'lecture', label: 'Video Lectures' },
             { id: 'course', label: 'Courses' },
-            { id: 'roadmap', label: 'Roadmaps' },
             { id: 'draft', label: 'Drafts' }
           ].map(tab => (
             <button

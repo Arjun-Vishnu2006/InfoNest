@@ -183,7 +183,7 @@ app.use(
   chatRoutes
 );
 
-// Grok-powered learning assistant
+// Groq-powered learning assistant
 app.use(
   '/api/v1/ai',
   aiRoutes

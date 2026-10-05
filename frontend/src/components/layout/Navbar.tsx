@@ -82,7 +82,7 @@ export const Navbar: React.FC = () => {
               type="text"
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
-              placeholder="Search knowledge, creators, courses, roadmaps..."
+              placeholder="Search knowledge, creators, and courses..."
               className="w-full pl-10 pr-12 py-2.5 bg-white/5 border border-white/10 rounded-full text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:border-purple-500/50 focus:bg-white/[0.08] focus:ring-2 focus:ring-purple-500/20 transition-all shadow-inner"
             />
             <button type="submit" aria-label="Search" title="Search" className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 rounded-full text-slate-300 hover:text-white hover:bg-purple-500/20 transition-colors">
@@ -101,29 +101,6 @@ export const Navbar: React.FC = () => {
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>Cosmos Online</span>
           </div>
-          {/* Ambient Cosmic Sound Visualizer */}
-          <button
-            onClick={() => {
-              sounds.playClick();
-              toggleAmbient();
-            }}
-            title={isAmbientPlaying ? 'Mute Space Drone' : 'Play Ambient Space Drone'}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-mono transition-all ${
-              isAmbientPlaying
-                ? 'bg-cyan-500/10 border-cyan-500/40 text-cyan-300 shadow-glow-cyan'
-                : 'bg-white/5 border-white/10 text-slate-400 hover:text-slate-200 hover:border-white/20'
-            }`}
-          >
-            <Radio className={`w-3.5 h-3.5 ${isAmbientPlaying ? 'animate-pulse text-cyan-400' : ''}`} />
-            <span className="hidden lg:inline">Space Drone</span>
-            {isAmbientPlaying && (
-              <span className="flex items-end gap-[2px] h-3">
-                <span className="w-[2px] h-2 bg-cyan-400 animate-[pulse_0.6s_ease-in-out_infinite]" />
-                <span className="w-[2px] h-3 bg-cyan-400 animate-[pulse_0.9s_ease-in-out_infinite_0.2s]" />
-                <span className="w-[2px] h-1.5 bg-cyan-400 animate-[pulse_0.7s_ease-in-out_infinite_0.4s]" />
-              </span>
-            )}
-          </button>
 
           {/* Sound FX Mute Toggle */}
           <button

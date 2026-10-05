@@ -8,12 +8,11 @@ import { sounds } from '../services/soundManager';
 export const CoursesPage: React.FC = () => {
   const { courses, enrollInCourse } = useApp();
   const [selectedCat, setSelectedCat] = useState('All');
+  const [search, setSearch] = useState('');
 
-  const categories = ['All', 'Artificial Intelligence', 'Cloud & Infrastructure', 'Design & Creative Engineering', 'Cybersecurity'];
+  const categories = ['All', 'Programming', 'Web Development', 'Cybersecurity', 'Cloud Computing', 'Data Science', 'Artificial Intelligence', 'Databases', 'DevOps', 'Networking', 'Software Engineering'];
 
-  const filteredCourses = selectedCat === 'All'
-    ? courses
-    : courses.filter(c => c.category === selectedCat);
+  const filteredCourses = courses.filter(c => (selectedCat === 'All' || c.category === selectedCat) && `${c.title} ${c.subtitle} ${c.creator.name}`.toLowerCase().includes(search.toLowerCase()));
 
   const enrolledCourses = courses.filter(c => c.isEnrolled);
   const featuredCourse = courses[0];
@@ -76,6 +75,7 @@ export const CoursesPage: React.FC = () => {
           </div>
         )}
 
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search courses or instructors…" aria-label="Search courses" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-purple-400/50" />
         {/* Category Filters */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none text-xs font-mono">
           {categories.map(cat => (

@@ -1,6 +1,4 @@
-# Clean Production Start
-
-This build operates entirely on real MongoDB data. There is no mock/demo data.
+# InfoNest Presentation Mode
 
 ## First Run
 
@@ -11,12 +9,12 @@ This build operates entirely on real MongoDB data. There is no mock/demo data.
 2. Health check: http://127.0.0.1:5000/api/v1/health
    Expected: `{ "success": true }`
 
-3. The database starts empty. Register the first user to begin.
+3. On the login page, select **Continue with Demo Account** to use the locally seeded presentation data. No production user record is needed for the frontend demo.
 
-4. All pages show proper empty states when no data exists.
+4. Demo goal and message changes persist in this browser.
 
 ## AI Features
 
-AI features (Cosmos AI chat, What Next, recommendations) require a valid `XAI_API_KEY` in `backend/.env`.
+AI chat uses `GROQ_API_KEY` in `backend/.env` and requires a running backend.
 
-If the AI key is missing or invalid, the UI displays a user-friendly error instead of crashing.
+If Groq is unavailable, chat shows a friendly learning prompt and What’s Next uses the local goal progress.

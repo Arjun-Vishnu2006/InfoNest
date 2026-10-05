@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Sparkles, Compass, Map, BookOpen, User, PlusCircle, MessageCircle } from 'lucide-react';
+import { Sparkles, Compass, BookOpen, User, PlusCircle, MessageCircle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { sounds } from '../../services/soundManager';
 
@@ -47,19 +47,6 @@ export const MobileNav: React.FC = () => {
           <span>Drop</span>
         </NavLink>
       )}
-
-      <NavLink
-        to="/roadmaps"
-        onClick={() => sounds.playClick()}
-        className={({ isActive }) =>
-          `flex flex-col items-center gap-1 text-[10px] font-mono ${
-            isActive ? 'text-purple-400 font-bold' : 'text-slate-400 hover:text-slate-200'
-          }`
-        }
-      >
-        <Map className="w-5 h-5" />
-        <span>Roadmaps</span>
-      </NavLink>
 
       <NavLink
         to="/courses"

@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 import {
   Sparkles,
   Compass,
-  Map,
   BookOpen,
   Target,
   Bookmark,
@@ -30,7 +29,6 @@ export const Sidebar: React.FC = () => {
     { to: '/feed', label: 'The Nest', icon: Sparkles },
     { to: '/messages', label: 'Messages', icon: MessageCircle },
     { to: '/explore', label: 'Explore Cosmos', icon: Compass },
-    { to: '/roadmaps', label: 'Learning Roadmaps', icon: Map, badge: '3 active' },
     { to: '/courses', label: 'Course Vault', icon: BookOpen, badge: 'Vault' },
     { to: '/missions', label: 'Learning Missions', icon: Target, badge: 'New' },
     { to: '/orbit-rooms', label: 'Orbit Rooms', icon: Radio, badge: 'Live' },
@@ -47,7 +45,6 @@ export const Sidebar: React.FC = () => {
     { to: '/creator/studio', label: 'Publishing Studio', icon: Edit3, badge: 'Studio' },
     { to: '/create/post', label: 'Create Post Drop', icon: PlusSquare },
     { to: '/create/course', label: 'Create Course Wizard', icon: BookOpen },
-    { to: '/create/roadmap', label: 'Create Roadmap', icon: Layers },
     { to: '/feed', label: 'Switch to The Nest', icon: Sparkles },
   ];
 
@@ -203,8 +200,8 @@ export const Sidebar: React.FC = () => {
         </div>
         <div className="h-6 w-px bg-white/10" />
         <div>
-          <span className="block text-slate-200 font-bold">{currentUser.activeRoadmapsCount}</span>
-          <span className="text-[10px]">Roadmaps</span>
+          <span className="block text-slate-200 font-bold">{currentUser.enrolledCoursesCount}</span>
+          <span className="text-[10px]">Courses</span>
         </div>
         <div className="h-6 w-px bg-white/10" />
         <div>

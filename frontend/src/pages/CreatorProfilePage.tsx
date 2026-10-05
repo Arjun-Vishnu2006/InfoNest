@@ -25,15 +25,14 @@ import {
 
 export const CreatorProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
-  const { creators, posts, courses, roadmaps, toggleFollowCreator, showToast } = useApp();
+  const { creators, posts, courses, toggleFollowCreator, showToast } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'posts' | 'courses' | 'roadmaps' | 'resources'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'courses'>('posts');
 
   const creator = creators.find(c => c.username === username) || creators[0];
 
   const creatorPosts = posts.filter(p => p.creator.id === creator.id || p.creator.username === creator.username);
   const creatorCourses = courses.filter(c => c.creator.id === creator.id || c.creator.username === creator.username);
-  const creatorRoadmaps = roadmaps; // Filtered or related
 
   const handleShare = () => {
     sounds.playClick();
@@ -219,7 +218,6 @@ export const CreatorProfilePage: React.FC = () => {
           {[
             { id: 'posts', label: `Posts & Drops (${creatorPosts.length})` },
             { id: 'courses', label: `Masterclasses (${creatorCourses.length})` },
-            { id: 'roadmaps', label: `Roadmaps (${creatorRoadmaps.length})` }
           ].map(tab => (
             <button
               key={tab.id}
@@ -287,27 +285,6 @@ export const CreatorProfilePage: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'roadmaps' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {creatorRoadmaps.map(rm => (
-              <div key={rm.id} className="glass-panel rounded-2xl p-6 border border-white/10 flex flex-col justify-between space-y-4">
-                <div>
-                  <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">{rm.category}</span>
-                  <h3 className="text-base font-bold text-white mt-2">{rm.title}</h3>
-                  <p className="text-xs text-slate-400 mt-1 line-clamp-2">{rm.description}</p>
-                </div>
-                <Link
-                  to={`/roadmap/${rm.id}`}
-                  onClick={() => sounds.playClick()}
-                  className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-glow-cyan"
-                >
-                  <span>Launch 3D Roadmap</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </MainLayout>
   );

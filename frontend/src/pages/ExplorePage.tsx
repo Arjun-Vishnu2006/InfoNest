@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export const ExplorePage: React.FC = () => {
-  const { courses, roadmaps, creators, posts } = useApp();
+  const { courses, creators, posts } = useApp();
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   const categories = [
@@ -46,17 +46,9 @@ export const ExplorePage: React.FC = () => {
               Explore The Knowledge Cosmos
             </h1>
             <p className="text-sm text-slate-300 leading-relaxed">
-              Navigate frontier masterclasses, verified architecture blueprints, and interactive roadmaps crafted by senior engineers and research fellows worldwide.
+              Navigate practical masterclasses and creator-led learning from engineers and research fellows.
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
-              <Link
-                to="/roadmaps"
-                onClick={() => sounds.playClick()}
-                className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-xl text-xs shadow-glow-cyan flex items-center gap-2 hover:opacity-95 transition-all"
-              >
-                <Layers className="w-4 h-4" />
-                <span>Launch 3D Roadmaps</span>
-              </Link>
               <Link
                 to="/courses"
                 onClick={() => sounds.playClick()}
@@ -239,73 +231,6 @@ export const ExplorePage: React.FC = () => {
                     </span>
                   </div>
                 </Link>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* 5. Trending Interactive Roadmaps */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Layers className="w-4 h-4 text-purple-400" />
-              <span>Interactive Learning Roadmaps</span>
-            </h2>
-            <Link
-              to="/roadmaps"
-              onClick={() => sounds.playClick()}
-              className="text-xs font-mono text-purple-400 hover:text-purple-300 flex items-center gap-1"
-            >
-              <span>Explore All Roadmaps →</span>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {roadmaps.length === 0 ? (
-              <div className="col-span-2 text-center py-8 rounded-2xl border border-white/5 bg-white/5">
-                <span className="text-xs text-slate-400">No roadmaps available</span>
-              </div>
-            ) : (
-              roadmaps.map((rm) => (
-                <div
-                  key={rm.id}
-                  className="glass-panel rounded-2xl p-6 border border-white/10 flex flex-col justify-between space-y-4 group hover:border-cyan-500/40 transition-all"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-300">
-                        {rm.category}
-                      </span>
-                      <span className="text-xs font-mono text-slate-400">
-                        ⏱ {rm.estimatedWeeks} Weeks · {rm.totalMilestones} Phases
-                      </span>
-                    </div>
-                    <Link
-                      to={`/roadmap/${rm.id}`}
-                      onClick={() => sounds.playClick()}
-                      className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors block"
-                    >
-                      {rm.title}
-                    </Link>
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                      {rm.description}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                    <span className="text-xs font-mono text-slate-400">
-                      ⭐ {rm.clonesCount.toLocaleString()} cloned
-                    </span>
-                    <Link
-                      to={`/roadmap/${rm.id}`}
-                      onClick={() => sounds.playClick()}
-                      className="px-4 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-semibold hover:bg-cyan-500/30 transition-all flex items-center gap-1"
-                    >
-                      <span>View 3D Nodes</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
               ))
             )}
           </div>

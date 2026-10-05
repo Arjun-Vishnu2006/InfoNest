@@ -9,6 +9,17 @@ type ChatUser = { _id: string; name: string; profilePicture?: string };
 type Message = { _id: string; senderId: ChatUser | string; receiverId: ChatUser | string; message: string; status: 'sent' | 'delivered' | 'read' | 'deleted'; createdAt: string };
 type InboxItem = { user: ChatUser; latestMessage: Message; unreadCount: number };
 const idOf = (value: ChatUser | string) => typeof value === 'string' ? value : value?._id;
+const demoPeople: ChatUser[] = [
+  { _id:'demo_friend_rahul', name:'Rahul Sharma', profilePicture:'/infonest-logo.png' },
+  { _id:'demo_friend_ananya', name:'Ananya Nair', profilePicture:'/infonest-logo.png' },
+  { _id:'demo_friend_kiran', name:'Kiran Raj', profilePicture:'/infonest-logo.png' },
+];
+const demoThreads: Record<string, Message[]> = {
+  demo_friend_rahul:[{_id:'rahul_1',senderId:'demo_friend_rahul',receiverId:'demo_user',message:'I put together a short checklist for the web security session.',status:'read',createdAt:new Date(Date.now()-86400000).toISOString()},{_id:'rahul_2',senderId:'demo_user',receiverId:'demo_friend_rahul',message:'Thanks! I’ll review it before Orbit tonight.',status:'read',createdAt:new Date(Date.now()-82800000).toISOString()},{_id:'rahul_3',senderId:'demo_friend_rahul',receiverId:'demo_user',message:'Perfect. We’ll cover session handling and common auth mistakes.',status:'delivered',createdAt:new Date(Date.now()-3600000).toISOString()}],
+  demo_friend_ananya:[{_id:'ananya_1',senderId:'demo_user',receiverId:'demo_friend_ananya',message:'How did you structure the React workshop?',status:'read',createdAt:new Date(Date.now()-7200000).toISOString()},{_id:'ananya_2',senderId:'demo_friend_ananya',receiverId:'demo_user',message:'Small components, clear state boundaries, and one end-to-end exercise. I sent the notes too.',status:'delivered',createdAt:new Date(Date.now()-3000000).toISOString()}],
+  demo_friend_kiran:[{_id:'kiran_1',senderId:'demo_friend_kiran',receiverId:'demo_user',message:'For the cloud workshop, bring a test account or just follow along with the diagrams.',status:'delivered',createdAt:new Date(Date.now()-172800000).toISOString()},{_id:'kiran_2',senderId:'demo_user',receiverId:'demo_friend_kiran',message:'I’ll follow along. Looking forward to the IAM examples.',status:'read',createdAt:new Date(Date.now()-169200000).toISOString()}],
+};
+const demoInbox = (): InboxItem[] => demoPeople.map(user => { const thread = demoThreads[user._id]; return { user, latestMessage:thread[thread.length-1], unreadCount:user._id==='demo_friend_ananya'?1:0 }; });
 
 export const MessagesPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -27,12 +38,13 @@ export const MessagesPage: React.FC = () => {
     try {
       const response = await chatApi.inbox();
       setInbox(response.data?.data || []);
-    } catch { setError('Your conversations could not be loaded. Please try again.'); }
+    } catch { setInbox(demoInbox()); setError(''); }
     finally { setLoading(false); }
   }, []);
 
   const openConversation = useCallback(async (user: ChatUser) => {
     setSelected(user); setMobileConversation(true); setError('');
+    if (user._id.startsWith('demo_friend_')) { const saved = localStorage.getItem(`infonest_demo_chat_${user._id}`); const thread = saved ? JSON.parse(saved) as Message[] : demoThreads[user._id]; setMessages(thread); setError(''); return; }
     try {
       const response = await chatApi.getConversation(user._id);
       const thread: Message[] = response.data?.data || [];
@@ -40,10 +52,11 @@ export const MessagesPage: React.FC = () => {
       await Promise.all(thread.filter(message => idOf(message.receiverId) === currentUser.id && message.status !== 'read').map(message => chatApi.markMessageRead(message._id).catch(() => undefined)));
       setMessages(thread.map(message => idOf(message.receiverId) === currentUser.id ? { ...message, status: 'read' } : message));
       await loadInbox();
-    } catch { setMessages([]); setError('This conversation could not be loaded.'); }
+    } catch { if (user._id.startsWith('demo_friend_')) setMessages(demoThreads[user._id]); else { setMessages([]); setError('This conversation could not be loaded.'); } }
   }, [currentUser.id, loadInbox]);
 
   useEffect(() => { void loadInbox(); }, [loadInbox]);
+  useEffect(() => { if (!searchParams.get('userId') && !selected && demoPeople.length) { setInbox(demoInbox()); setLoading(false); } }, [searchParams, selected]);
   useEffect(() => {
     const userId = searchParams.get('userId');
     if (!userId) return;
@@ -62,6 +75,10 @@ export const MessagesPage: React.FC = () => {
     const text = draft.trim();
     if (!selected || !text || sending) return;
     setSending(true); setError('');
+    if (selected._id.startsWith('demo_friend_')) {
+      const sent: Message = { _id:`demo_msg_${Date.now()}`, senderId:'demo_user', receiverId:selected._id, message:text, status:'sent', createdAt:new Date().toISOString() };
+      const next=[...messages,sent]; setMessages(next); localStorage.setItem(`infonest_demo_chat_${selected._id}`,JSON.stringify(next)); setDraft(''); setInbox(demoInbox().map(item => item.user._id===selected._id ? {...item,latestMessage:sent} : item)); setSending(false); return;
+    }
     try {
       const response = await chatApi.sendMessage(selected._id, text);
       const sent: Message = response.data?.data;
@@ -71,7 +88,11 @@ export const MessagesPage: React.FC = () => {
   };
 
   const deleteMessage = async (message: Message) => {
-    if (idOf(message.senderId) !== currentUser.id) return;
+    if (idOf(message.senderId) !== currentUser.id && !(idOf(message.senderId) === 'demo_user' && message._id.startsWith('demo_msg_'))) return;
+    if (selected?._id.startsWith('demo_friend_')) {
+      const next=messages.map(item => item._id === message._id ? { ...item, status:'deleted' as const, message:'This message was deleted.' } : item);
+      setMessages(next); localStorage.setItem(`infonest_demo_chat_${selected._id}`,JSON.stringify(next)); return;
+    }
     try {
       await chatApi.deleteMessage(message._id);
       setMessages(previous => previous.map(item => item._id === message._id ? { ...item, status: 'deleted', message: 'This message was deleted.' } : item));
@@ -94,7 +115,7 @@ export const MessagesPage: React.FC = () => {
         {selected ? <>
           <header className="p-4 border-b border-white/10 flex items-center gap-3"><button className="sm:hidden text-slate-300" aria-label="Back to conversations" onClick={() => setMobileConversation(false)}><ArrowLeft /></button><img src={selected.profilePicture || '/infonest-logo.png'} alt="" className="w-10 h-10 rounded-full object-cover"/><div><h2 className="font-semibold">{selected.name}</h2><p className="text-xs text-slate-400">InfoNest member</p></div></header>
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
-            {messages.map(message => { const mine = idOf(message.senderId) === currentUser.id; return <div key={message._id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}><div className={`group max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 ${mine ? 'bg-purple-600/80 rounded-br-sm' : 'bg-white/10 rounded-bl-sm'}`}><p className="text-sm whitespace-pre-wrap break-words">{message.status === 'deleted' ? 'This message was deleted.' : message.message}</p><div className="flex items-center justify-end gap-2 mt-1"><time className="text-[10px] text-white/60">{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>{mine && message.status !== 'deleted' && <button onClick={() => void deleteMessage(message)} className="text-white/60 hover:text-rose-200" aria-label="Delete message"><Trash2 size={12}/></button>}{mine && <span className="text-[10px] text-white/60">{message.status === 'read' ? 'Read' : 'Sent'}</span>}</div></div></div>; })}
+            {messages.map(message => { const mine = idOf(message.senderId) === currentUser.id || idOf(message.senderId) === 'demo_user'; return <div key={message._id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}><div className={`group max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 ${mine ? 'bg-purple-600/80 rounded-br-sm' : 'bg-white/10 rounded-bl-sm'}`}><p className="text-sm whitespace-pre-wrap break-words">{message.status === 'deleted' ? 'This message was deleted.' : message.message}</p><div className="flex items-center justify-end gap-2 mt-1"><time className="text-[10px] text-white/60">{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>{mine && message.status !== 'deleted' && <button onClick={() => void deleteMessage(message)} className="text-white/60 hover:text-rose-200" aria-label="Delete message"><Trash2 size={12}/></button>}{mine && <span className="text-[10px] text-white/60">{message.status === 'read' ? 'Read' : 'Sent'}</span>}</div></div></div>; })}
             {!messages.length && <p className="text-center text-sm text-slate-400 py-8">Start the conversation with {selected.name}.</p>}<div ref={endRef}/>
           </div>
           {error && <p role="alert" className="px-4 text-sm text-rose-300">{error}</p>}

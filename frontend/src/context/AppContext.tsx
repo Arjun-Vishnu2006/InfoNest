@@ -24,6 +24,9 @@ import {
 import { sounds } from '../services/soundManager';
 import { usersApi, goalsApi, contentApi, roadmapsApi, notificationsApi } from '../services/api';
 import { useAuth } from './AuthContext';
+import { demoCreators, demoCourses, demoGoals, demoNotifications, demoOrbitRooms, demoPosts } from '../data/demoData';
+
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE !== 'false';
 
 interface AppContextType {
   role: UserRole;
@@ -287,14 +290,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [authUser]);
 
   // All data states start EMPTY — no mock data
-  const [creators, setCreators] = useState<Creator[]>([]);
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [creators, setCreators] = useState<Creator[]>(DEMO_MODE ? demoCreators : []);
+  const [posts, setPosts] = useState<Post[]>(DEMO_MODE ? demoPosts : []);
   const [stories] = useState<Story[]>([]);
-  const [courses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<Course[]>(DEMO_MODE ? demoCourses : []);
   const [roadmaps, setRoadmaps] = useState<RoadmapData[]>([]);
   const [activeRoadmap, setActiveRoadmap] = useState<RoadmapData | null>(null);
-  const [goals, setGoals] = useState<UserGoal[]>([]);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [goals, setGoals] = useState<UserGoal[]>(() => {
+    try { const saved = localStorage.getItem('infonest_demo_goals'); return DEMO_MODE ? (saved ? JSON.parse(saved) : demoGoals) : []; } catch { return demoGoals; }
+  });
+  const [notifications, setNotifications] = useState<NotificationItem[]>(DEMO_MODE ? demoNotifications : []);
   const [creatorContent, setCreatorContent] = useState<ContentItem[]>([]);
 
   // =====================================================
@@ -305,14 +310,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const res = await usersApi.creators();
       const list = res.data?.data?.creators || [];
-      setCreators(list.map(mapBackendCreator));
-    } catch { /* empty */ }
+      if (list.length) setCreators(list.map(mapBackendCreator));
+    } catch { /* keep presentation data */ }
   }, []);
 
   const refreshContent = useCallback(async () => {
     try {
       const res = await contentApi.feed();
       const list = res.data?.data || [];
+      if (!list.length && DEMO_MODE) { setPosts(prev => prev.length ? prev : demoPosts); return; }
       setPosts(list.map(mapContentToPost));
       // Also populate creatorContent for creator dashboard
       setCreatorContent(list.map((item: any) => ({
@@ -325,7 +331,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         likes: 0,
         comments: 0,
       })));
-    } catch { /* empty */ }
+    } catch { /* keep presentation data */ }
   }, []);
 
   const refreshRoadmaps = useCallback(async () => {
@@ -364,7 +370,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const res = await notificationsApi.list();
       const list = res.data?.data || [];
-      setNotifications(list.map(mapBackendNotification));
+      if (list.length) setNotifications(list.map(mapBackendNotification));
     } catch { /* empty */ }
   }, []);
 
@@ -385,8 +391,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const list = await goalsApi.list(backendUser?._id ? { createdBy: backendUser._id } : undefined);
         const backendGoals = list.data?.data?.goals || [];
-        setGoals(backendGoals.map(mapBackendGoal));
-      } catch { /* keep empty */ }
+        if (backendGoals.length) setGoals(backendGoals.map(mapBackendGoal));
+      } catch { /* keep presentation goals */ }
 
       // Load other data in parallel
       await Promise.allSettled([
@@ -430,7 +436,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const toggleAmbient = () => {
     const playing = sounds.toggleAmbient();
     setIsAmbientPlaying(playing);
-    showToast(playing ? 'Space drone ambient sound ON' : 'Ambient sound OFF', 'info');
+    showToast(playing ? 'Ambient sound ON' : 'Ambient sound OFF', 'info');
   };
 
   // Social interactions
@@ -768,6 +774,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const progressPercent = Math.min(100, Math.round((nextLogged / targetHours) * 100));
     setGoals(prev => prev.map(g => g.id === goalId || g.backendId === goalId ? { ...g, loggedHoursThisWeek: nextLogged, progressPercent } : g));
 
+    if (DEMO_MODE && (!target.backendId || target.id.startsWith('demo_goal_'))) {
+      persistDemoGoals(goals.map(g => g.id === goalId || g.backendId === goalId ? { ...g, loggedHoursThisWeek: nextLogged, progressPercent, completedTasks: Math.min(g.totalTasks, Math.floor(progressPercent / 100 * g.totalTasks)) } : g));
+      sounds.playChime(); showToast(`Logged +${hours} hr study.`, 'success'); return;
+    }
     try {
       if (target.backendId) await goalsApi.update(target.backendId, { completedHours: nextLogged, progressPercent });
       sounds.playChime();
@@ -780,14 +790,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const persistDemoGoals = (next: UserGoal[]) => { setGoals(next); if (DEMO_MODE) localStorage.setItem('infonest_demo_goals', JSON.stringify(next)); };
   const createGoal = async (data: { title: string; category: string; description: string; targetHoursPerWeek: number; targetCompletionDate?: string }) => {
-    const response = await goalsApi.create(data);
-    const created = response.data?.data?.goal || response.data?.goal;
-    if (created) setGoals(prev => [mapBackendGoal(created), ...prev]);
-    showToast('Goal saved to your InfoNest profile.', 'success');
+    if (DEMO_MODE) {
+      try { const response = await goalsApi.create(data); const created = response.data?.data?.goal || response.data?.goal; if (created) { persistDemoGoals([mapBackendGoal(created), ...goals]); showToast('Goal saved to your InfoNest profile.', 'success'); return; } } catch { /* local presentation storage fallback */ }
+      const local: UserGoal = { id:`demo_goal_${Date.now()}`, title:data.title, category:data.category, description:data.description, status:'active', roadmapTitle:data.title, targetHoursPerWeek:data.targetHoursPerWeek, loggedHoursThisWeek:0, targetCompletionDate:data.targetCompletionDate || 'Flexible', streakDays:0, completedTasks:0, totalTasks:5, progressPercent:0, weeklyHistory:[0,0,0,0,0,0,0] };
+      persistDemoGoals([local, ...goals]); showToast('Goal added to your demo profile.', 'success'); return;
+    }
+    const response = await goalsApi.create(data); const created = response.data?.data?.goal || response.data?.goal;
+    if (created) setGoals(prev => [mapBackendGoal(created), ...prev]); showToast('Goal saved to your InfoNest profile.', 'success');
   };
 
   const updateGoal = async (goalId: string, data: Record<string, unknown>) => {
+    if (DEMO_MODE && goalId.startsWith('demo_goal_')) { persistDemoGoals(goals.map(g => g.id === goalId ? { ...g, ...data, title: String(data.title ?? g.title), roadmapTitle: String(data.title ?? g.title), progressPercent: Number(data.progressPercent ?? g.progressPercent) } : g)); showToast('Goal updated.', 'success'); return; }
     const response = await goalsApi.update(goalId, data);
     const updated = response.data?.data?.goal || response.data?.goal;
     if (updated) setGoals(prev => prev.map(g => g.backendId === goalId || g.id === goalId ? mapBackendGoal(updated) : g));
@@ -795,6 +810,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteGoal = async (goalId: string) => {
+    if (DEMO_MODE && goalId.startsWith('demo_goal_')) { persistDemoGoals(goals.filter(g => g.id !== goalId && g.backendId !== goalId)); showToast('Goal removed.', 'info'); return; }
     await goalsApi.remove(goalId);
     setGoals(prev => prev.filter(g => g.backendId !== goalId && g.id !== goalId));
     showToast('Goal removed.', 'info');
@@ -831,7 +847,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // ---------------- SIGNATURE INFONEST DOMAIN FEATURES ----------------
   const [knowledgeTrails, setKnowledgeTrails] = useState<KnowledgeTrail[]>([]);
   const [learningMissions, setLearningMissions] = useState<LearningMission[]>([]);
-  const [orbitRooms] = useState<OrbitRoom[]>([]);
+  const [orbitRooms] = useState<OrbitRoom[]>(DEMO_MODE ? demoOrbitRooms : []);
   const [challenges, setChallenges] = useState<KnowledgeChallenge[]>([]);
   const [knowledgeProofs] = useState<KnowledgeProof[]>([]);
 
@@ -912,7 +928,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const joinOrbitRoom = (roomId: string) => {
     sounds.playChime();
     const room = orbitRooms.find(r => r.id === roomId);
-    showToast(`Joined ${room?.name || 'Orbit Room'}! Welcome to the focus sphere.`, 'info');
+    showToast(room?.activeNow ? `Joined live session: ${room.name}` : `${room?.name || 'Orbit session'} added to your schedule.`, 'info');
   };
 
   const submitChallengeSolution = (challengeId: string) => {

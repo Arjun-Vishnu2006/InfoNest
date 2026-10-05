@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useApp } from '../context/AppContext';
 import { FeedCard } from '../components/feed/FeedCard';
-import { Bookmark, Sparkles, BookOpen, Layers, Trash2 } from 'lucide-react';
+import { Bookmark, Sparkles, BookOpen, Trash2 } from 'lucide-react';
 import { sounds } from '../services/soundManager';
 
 export const SavedVaultPage: React.FC = () => {
-  const { posts, courses, roadmaps } = useApp();
-  const [activeTab, setActiveTab] = useState<'posts' | 'courses' | 'roadmaps'>('posts');
+  const { posts, courses } = useApp();
+  const [activeTab, setActiveTab] = useState<'posts' | 'courses'>('posts');
 
   const bookmarkedPosts = posts.filter(p => p.isBookmarked);
   const enrolledCourses = courses.filter(c => c.isEnrolled);
@@ -23,7 +23,7 @@ export const SavedVaultPage: React.FC = () => {
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white">Saved Knowledge Vault</h1>
           <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-            Quickly reference your bookmarked visual carousels, video lecture reels, enrolled masterclasses, and cloned roadmaps.
+            Quickly reference your bookmarked visual drops and enrolled masterclasses.
           </p>
         </div>
 
@@ -32,7 +32,6 @@ export const SavedVaultPage: React.FC = () => {
           {[
             { id: 'posts', label: `Saved Drops (${bookmarkedPosts.length})` },
             { id: 'courses', label: `Enrolled Courses (${enrolledCourses.length})` },
-            { id: 'roadmaps', label: `Saved Roadmaps (${roadmaps.length})` }
           ].map(tab => (
             <button
               key={tab.id}
@@ -94,29 +93,6 @@ export const SavedVaultPage: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'roadmaps' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {roadmaps.length === 0 ? (
-              <div className="col-span-2 text-center py-20 glass-panel rounded-3xl border border-white/10 space-y-3">
-                <Layers className="w-10 h-10 text-slate-600 mx-auto" />
-                <h3 className="text-base font-bold text-white">No saved roadmaps</h3>
-                <p className="text-xs text-slate-400">Clone roadmaps from the Explore page to see them here.</p>
-              </div>
-            ) : (
-              roadmaps.map(rm => (
-                <div key={rm.id} className="glass-panel rounded-2xl p-5 border border-white/10 space-y-2">
-                  <span className="text-[10px] font-mono text-cyan-300 uppercase">{rm.category}</span>
-                  <h4 className="text-sm font-bold text-white">{rm.title}</h4>
-                  <p className="text-xs text-slate-400 line-clamp-2">{rm.description}</p>
-                  <div className="pt-2 text-xs font-mono text-slate-500 flex justify-between border-t border-white/5">
-                    <span>{rm.totalMilestones} Phases</span>
-                    <span className="text-emerald-400">{rm.completedMilestones} Completed</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
       </div>
     </MainLayout>
   );

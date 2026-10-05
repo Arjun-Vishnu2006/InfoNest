@@ -13,6 +13,8 @@ export const GoalsPage: React.FC = () => {
   const totalHours = goals.reduce((sum, g) => sum + (g.loggedHoursThisWeek || 0), 0);
   const totalTarget = goals.reduce((sum, g) => sum + (g.targetHoursPerWeek || 0), 0);
   const overallProgress = totalTarget ? Math.min(100, Math.round((totalHours / totalTarget) * 100)) : 0;
+  const priorityGoal = goals.find(goal => goal.status === 'active');
+  const nextTask = priorityGoal ? `${Number(priorityGoal.progressPercent || 0) >= 65 ? 'Complete' : 'Continue'} ${priorityGoal.category === 'Cybersecurity' ? (Number(priorityGoal.progressPercent || 0) < 30 ? 'Networking Fundamentals' : Number(priorityGoal.progressPercent || 0) < 60 ? 'Linux Fundamentals' : 'Web Security') : `${priorityGoal.category} foundations`}` : 'Add a learning goal to get a personalized next step.';
 
   const openCreate = () => {
     setEditingId(null);
@@ -74,6 +76,13 @@ export const GoalsPage: React.FC = () => {
             return <div key={kpi.label} className="glass-panel rounded-2xl p-5 border border-white/10 space-y-2"><div className="flex items-center justify-between text-xs font-mono text-slate-400"><span>{kpi.label}</span><div className="p-2 rounded-xl bg-white/5 text-slate-300"><Icon className="w-4 h-4" /></div></div><h3 className="text-xl font-bold text-white font-mono">{kpi.value}</h3></div>;
           })}
         </div>
+
+        <section className="glass-panel rounded-3xl p-5 sm:p-6 border border-cyan-400/20 bg-gradient-to-r from-cyan-950/25 to-purple-950/20">
+          <div className="flex items-center gap-2 text-cyan-300 text-xs font-mono uppercase tracking-wider"><Sparkles className="w-4 h-4"/> What’s Next · based on your progress</div>
+          <h2 className="text-lg font-bold text-white mt-2">{nextTask}</h2>
+          {priorityGoal && <p className="text-xs text-slate-400 mt-1">For {priorityGoal.title || priorityGoal.roadmapTitle} · {Math.round(priorityGoal.progressPercent || 0)}% complete</p>}
+          {priorityGoal?.category === 'Cybersecurity' && <div className="flex flex-wrap gap-2 mt-4">{['Networking Fundamentals','Linux Fundamentals','Web Security','Burp Suite','Penetration Testing','Security Operations'].map((name,index)=>{const complete=index<Math.floor((priorityGoal.progressPercent || 0)/20);return <span key={name} className={`px-3 py-1.5 rounded-full text-[11px] border ${complete?'bg-emerald-500/10 border-emerald-500/25 text-emerald-200':'bg-white/5 border-white/10 text-slate-300'}`}>{complete?'✓ ':''}{name}{index===2&&!complete?` · ${Math.min(100,Math.round((priorityGoal.progressPercent||0)*1.5))}%`:''}</span>;})}</div>}
+        </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 flex flex-col items-center justify-center text-center space-y-4">
