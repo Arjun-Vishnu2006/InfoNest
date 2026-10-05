@@ -4,7 +4,6 @@ import {
   Sparkles,
   Compass,
   BookOpen,
-  Target,
   Bookmark,
   Users,
   LayoutDashboard,
@@ -23,17 +22,17 @@ import { useApp } from '../../context/AppContext';
 import { sounds } from '../../services/soundManager';
 
 export const Sidebar: React.FC = () => {
-  const { role, currentUser } = useApp();
+  const { role, currentUser, goals } = useApp();
+  const primaryGoal = goals[0];
 
   const studentNavItems = [
     { to: '/feed', label: 'The Nest', icon: Sparkles },
     { to: '/messages', label: 'Messages', icon: MessageCircle },
     { to: '/explore', label: 'Explore Cosmos', icon: Compass },
     { to: '/courses', label: 'Course Vault', icon: BookOpen, badge: 'Vault' },
-    { to: '/missions', label: 'Learning Missions', icon: Target, badge: 'New' },
     { to: '/orbit-rooms', label: 'Orbit Rooms', icon: Radio, badge: 'Live' },
     { to: '/challenges', label: 'Knowledge Challenges', icon: Zap },
-    { to: '/goals', label: 'My Goals & Progress', icon: Layers, badge: '2 today' },
+    { to: '/goals', label: 'Your Goals', icon: Layers },
     { to: '/saved', label: 'Saved Vault', icon: Bookmark, badge: '12' },
     { to: '/profile', label: 'My Professional Profile', icon: Users },
   ];
@@ -155,9 +154,9 @@ export const Sidebar: React.FC = () => {
           </div>
 
           <div className="mt-2 pt-2 border-t border-white/5">
-            <span className="text-[10px] text-slate-400 block font-mono">Current Mission:</span>
+              <span className="text-[10px] text-slate-400 block font-mono">Current Goal:</span>
             <p className="text-[11px] text-slate-200 font-medium truncate mt-0.5">
-              Complete System Design Module 4
+              {primaryGoal?.title || 'Choose a course to begin'}
             </p>
           </div>
         </div>

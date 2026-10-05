@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext';
 import { Search, Filter, BookOpen, Users, Sparkles, Layers, ArrowRight, Star } from 'lucide-react';
 import { sounds } from '../services/soundManager';
 import { usersApi } from '../services/api';
+import { mockCreatorAvatar } from '../data/demoData';
 
 export const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -16,6 +17,11 @@ export const SearchPage: React.FC = () => {
   const { courses, creators, posts, roadmaps } = useApp();
   const [learners, setLearners] = useState<any[]>([]);
   const [loadingLearners, setLoadingLearners] = useState(false);
+  const learnerAvatar = (person: any) => {
+    const profilePicture = person.profilePicture || '';
+    const seed = String(person._id || person.name || '').split('').reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0);
+    return profilePicture && !profilePicture.includes('infonest-logo.png') ? profilePicture : mockCreatorAvatar(person.name || 'InfoNest Learner', seed);
+  };
 
   useEffect(() => {
     setQuery(searchParams.get('q') || '');
@@ -244,7 +250,7 @@ export const SearchPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {matchedLearners.map((person) => (
                     <Link key={person._id} to={`/profile/${person._id}`} className="glass-panel rounded-2xl p-4 border border-white/10 hover:border-cyan-400/40 flex items-center gap-3 transition-all group">
-                      <img src={person.profilePicture || '/infonest-logo.png'} alt="" className="w-12 h-12 rounded-full object-cover ring-1 ring-white/10" />
+                      <img src={learnerAvatar(person)} alt="" className="w-12 h-12 rounded-full object-cover ring-1 ring-white/10" />
                       <div className="min-w-0"><h4 className="text-xs font-bold text-white truncate group-hover:text-cyan-200">{person.name}</h4><span className="text-[11px] text-slate-400 truncate block">{person.headline || person.expertiseArea || person.role}</span><span className="text-[10px] text-slate-500 truncate block">{(person.skills || []).slice(0, 3).join(' · ')}</span></div>
                     </Link>
                   ))}

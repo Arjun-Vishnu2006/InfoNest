@@ -24,7 +24,7 @@ import {
 import { sounds } from '../services/soundManager';
 import { usersApi, goalsApi, contentApi, roadmapsApi, notificationsApi } from '../services/api';
 import { useAuth } from './AuthContext';
-import { demoCreators, demoCourses, demoGoals, demoNotifications, demoOrbitRooms, demoPosts, demoStories } from '../data/demoData';
+import { demoCreators, demoCourses, demoGoals, demoNotifications, demoOrbitRooms, demoPosts, demoStories, mockCreatorAvatar, mockCreatorCover } from '../data/demoData';
 
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE !== 'false';
 
@@ -126,7 +126,7 @@ const EMPTY_CURRENT_USER: CurrentUser = {
   username: '',
   name: '',
   handle: '',
-  avatar: '/infonest-logo.png',
+  avatar: mockCreatorAvatar('InfoNest Learner', 17),
   coverImage: '',
   role: 'Learner',
   bio: '',
@@ -158,7 +158,7 @@ const mapBackendUser = (u: any): CurrentUser => ({
   phone: u?.phone || '',
   username: u?.email ? String(u.email).split('@')[0] : '',
   handle: u?.email ? `@${String(u.email).split('@')[0]}` : '',
-  avatar: u?.profilePicture || '/infonest-logo.png',
+  avatar: u?.profilePicture && !String(u.profilePicture).includes('infonest-logo.png') ? u.profilePicture : mockCreatorAvatar(u?.name || 'InfoNest Learner', String(u?._id || u?.id || u?.name || '').split('').reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0)),
   role: u?.role === 'ContentCreator' ? 'Content Creator' : (u?.role === 'Admin' ? 'Admin' : 'Learner'),
   expertiseArea: u?.expertiseArea || '',
   reputationScore: u?.reputationScore ?? 0,
@@ -196,8 +196,8 @@ const mapBackendCreator = (u: any): Creator => ({
   username: u?.email ? String(u.email).split('@')[0] : '',
   name: u?.name || '',
   handle: u?.email ? `@${String(u.email).split('@')[0]}` : '',
-  avatar: u?.profilePicture || '/infonest-logo.png',
-  coverImage: '',
+  avatar: u?.profilePicture && !String(u.profilePicture).includes('infonest-logo.png') ? u.profilePicture : mockCreatorAvatar(u?.name || 'InfoNest Creator', String(u?._id || u?.id || u?.name || '').split('').reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0)),
+  coverImage: mockCreatorCover(u?.expertiseArea || u?.headline || 'Creator', String(u?._id || u?.id || u?.name || '').split('').reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0)),
   role: u?.headline || u?.expertiseArea || 'Content Creator',
   specialty: u?.expertiseArea || '',
   bio: u?.about || '',
@@ -222,7 +222,7 @@ const mapContentToPost = (item: any): Post => ({
     username: '',
     name: item?.creatorId?.name || 'Unknown Creator',
     handle: '',
-    avatar: item?.creatorId?.profilePicture || '/infonest-logo.png',
+    avatar: item?.creatorId?.profilePicture && !String(item.creatorId.profilePicture).includes('infonest-logo.png') ? item.creatorId.profilePicture : mockCreatorAvatar(item?.creatorId?.name || 'InfoNest Creator', String(item?.creatorId?._id || item?.creatorId || '').split('').reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0)),
     coverImage: '',
     role: item?.creatorId?.expertiseArea || 'Creator',
     specialty: item?.creatorId?.expertiseArea || '',
@@ -296,11 +296,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [posts, setPosts] = useState<Post[]>(DEMO_MODE ? demoPosts : []);
   const [stories, setStories] = useState<Story[]>(() => {
     if (!DEMO_MODE) return [];
-    try { const saved = JSON.parse(localStorage.getItem('infonest_demo_stories') || 'null') as Story[] | null; return saved?.length ? saved : demoStories; } catch { return demoStories; }
+    try {
+      const saved = JSON.parse(localStorage.getItem('infonest_demo_stories') || 'null') as Story[] | null;
+      return saved?.length ? saved.map(story => {
+        const seed = demoStories.find(item => item.id === story.id);
+        return seed ? { ...seed, ...story, creator:seed.creator, previewImage:seed.previewImage } : story;
+      }) : demoStories;
+    } catch { return demoStories; }
   });
   const [courses, setCourses] = useState<Course[]>(() => {
     if (!DEMO_MODE) return [];
-    try { const saved = JSON.parse(localStorage.getItem('infonest_demo_courses') || 'null') as Course[] | null; return saved?.length ? demoCourses.map(course => ({ ...course, ...(saved.find(item => item.id === course.id) || {}) })) : demoCourses; } catch { return demoCourses; }
+    try {
+      const saved = JSON.parse(localStorage.getItem('infonest_demo_courses') || 'null') as Course[] | null;
+      if (!saved?.length) return demoCourses;
+      const goalCourseIds = new Set(demoGoals.map(goal => goal.courseId));
+      return demoCourses.map(course => {
+        const stored = saved.find(item => item.id === course.id);
+        if (!stored) return course;
+        const storedCompleted = Number(stored.completedLessons ?? course.completedLessons ?? 0);
+        const completedLessons = goalCourseIds.has(course.id) ? Math.max(course.completedLessons || 0, storedCompleted) : storedCompleted;
+        const totalLessons = goalCourseIds.has(course.id) ? course.totalLessons || stored.totalLessons || 20 : Number(stored.totalLessons || course.totalLessons || 20);
+        return {
+          ...course, ...stored, creator:course.creator, coverImage:course.coverImage, thumbnail:course.thumbnail,
+          completedLessons, totalLessons, progressPercent:Math.round(completedLessons / totalLessons * 100),
+        };
+      });
+    } catch { return demoCourses; }
   });
   const [roadmaps, setRoadmaps] = useState<RoadmapData[]>([]);
   const [activeRoadmap, setActiveRoadmap] = useState<RoadmapData | null>(null);
@@ -310,8 +331,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!DEMO_MODE) return [];
       if (saved) {
         if (!saved.length) return [];
-        const linked = saved.filter(goal => goal.courseId && demoCourses.some(course => course.id === goal.courseId));
-        return linked.length ? linked : demoGoals;
+        const upgradedSeeds = saved.map(goal => goal.id === 'demo_goal_demo_course_19' && goal.courseId === 'demo_course_19'
+          ? { ...goal, id:'demo_goal_demo_course_16', courseId:'demo_course_16' }
+          : goal);
+        const linked = upgradedSeeds.filter(goal => goal.courseId && demoCourses.some(course => course.id === goal.courseId)).map(goal => {
+          const course = courses.find(item => item.id === goal.courseId);
+          return course ? {
+            ...goal, title:course.title, roadmapTitle:course.title, category:course.category, instructor:course.instructor || course.creator.name,
+            description:course.description, completedLessons:course.completedLessons || 0, totalLessons:course.totalLessons || 20,
+            completedTasks:course.completedLessons || 0, totalTasks:course.totalLessons || 20, progressPercent:course.progressPercent,
+          } : goal;
+        });
+        const missingSeedGoals = demoGoals.filter(goal => !linked.some(existing => existing.courseId === goal.courseId));
+        return linked.length ? [...linked, ...missingSeedGoals] : demoGoals;
       }
       return demoGoals;
     } catch { return demoGoals; }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, UserPlus, UserCheck, Plus, Target, CheckCircle2, Circle, CloudSun, ArrowUpRight, Award } from 'lucide-react';
+import { TrendingUp, UserPlus, UserCheck, CloudSun, ArrowUpRight, Award } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { sounds } from '../../services/soundManager';
 
@@ -9,16 +9,12 @@ export const RightRail: React.FC = () => {
   const {
     goals,
     toggleFollowCreator,
-    creators,
-    learningMissions,
-    toggleMissionTask,
-    claimMissionReward
+    creators
   } = useApp();
 
   const [hoveredCreatorId, setHoveredCreatorId] = useState<string | null>(null);
 
   const primaryGoal = goals[0];
-  const dailyMission = learningMissions.find(m => m.type === 'daily') || learningMissions[0];
 
   const trendingTags = [
     'ReasoningAI',
@@ -32,9 +28,7 @@ export const RightRail: React.FC = () => {
     'Cybersecurity'
   ];
 
-  const progressPercent = primaryGoal
-    ? Math.min(100, Math.round((primaryGoal.loggedHoursThisWeek / primaryGoal.targetHoursPerWeek) * 100))
-    : 79;
+  const progressPercent = primaryGoal ? Math.min(100, Math.max(0, Number(primaryGoal.progressPercent || 0))) : 0;
 
   return (
     <aside className="w-80 shrink-0 hidden xl:flex flex-col gap-5 py-6 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto scrollbar-none">
@@ -44,10 +38,10 @@ export const RightRail: React.FC = () => {
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-mono uppercase tracking-wider text-purple-300 font-bold flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
-              Weekly Goal Pace
+              Course Progress
             </span>
             <span className="text-xs font-mono font-semibold text-slate-300">
-              {(primaryGoal.loggedHoursThisWeek || 0).toFixed(1)}h / {primaryGoal.targetHoursPerWeek || 0}h
+              {primaryGoal.completedLessons || 0} / {primaryGoal.totalLessons || primaryGoal.totalTasks || 0} lessons
             </span>
           </div>
 
@@ -78,10 +72,10 @@ export const RightRail: React.FC = () => {
 
             <div className="flex-1 min-w-0">
               <h4 className="text-xs font-bold text-slate-100 truncate">
-                Full-Stack Generative AI Architect
+                {primaryGoal.title || primaryGoal.roadmapTitle}
               </h4>
               <p className="text-[11px] text-cyan-400 font-mono mt-0.5">
-                {Math.max(0, (primaryGoal.targetHoursPerWeek || 0) - (primaryGoal.loggedHoursThisWeek || 0)).toFixed(1)}h remaining this week
+                {primaryGoal.category || 'Course'} goal
               </p>
             </div>
           </div>
@@ -94,71 +88,6 @@ export const RightRail: React.FC = () => {
             >
               Open Goals
             </Link>
-          </div>
-        </div>
-      )}
-
-      {/* 2. SIGNATURE FEATURE: DAILY LEARNING MISSION */}
-      {dailyMission && (
-        <div className="glass-panel rounded-2xl p-4 border border-emerald-500/20 relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-400">
-              <Target className="w-4 h-4 text-emerald-400" />
-              <span>TODAY'S MISSION</span>
-            </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">
-              +{dailyMission.rewardTokens} KT
-            </span>
-          </div>
-
-          <h4 className="text-xs font-semibold text-slate-100 mb-2.5">
-            "{dailyMission.title}"
-          </h4>
-
-          {/* Interactive Checklist */}
-          <div className="space-y-1.5 mb-3">
-            {dailyMission.tasks.map((task) => (
-              <div
-                key={task.id}
-                onClick={() => toggleMissionTask(dailyMission.id, task.id)}
-                className="flex items-start gap-2 p-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group select-none"
-              >
-                {task.completed ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                ) : (
-                  <Circle className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5 group-hover:text-slate-300" />
-                )}
-                <span
-                  className={`text-[11px] leading-tight transition-colors ${
-                    task.completed ? 'line-through text-slate-500' : 'text-slate-300'
-                  }`}
-                >
-                  {task.title}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] font-mono">
-            <span className="text-slate-400">
-              Progress: <strong className="text-emerald-400">{dailyMission.progress}/{dailyMission.total}</strong>
-            </span>
-            {dailyMission.completed && !dailyMission.claimed ? (
-              <button
-                onClick={() => claimMissionReward(dailyMission.id)}
-                className="px-2.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-bold rounded-lg text-xs shadow-glow-emerald animate-pulse"
-              >
-                Claim +{dailyMission.rewardTokens} KT
-              </button>
-            ) : (
-              <Link
-                to="/missions"
-                onClick={() => sounds.playClick()}
-                className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
-              >
-                <span>Start Mission →</span>
-              </Link>
-            )}
           </div>
         </div>
       )}
@@ -294,7 +223,7 @@ export const RightRail: React.FC = () => {
           <span>·</span>
           <Link to="/courses" className="hover:text-purple-400">Vault</Link>
           <span>·</span>
-          <Link to="/missions" className="hover:text-purple-400">Missions</Link>
+          <Link to="/goals" className="hover:text-purple-400">Goals</Link>
           <span>·</span>
           <Link to="/orbit-rooms" className="hover:text-purple-400">Orbit</Link>
         </div>

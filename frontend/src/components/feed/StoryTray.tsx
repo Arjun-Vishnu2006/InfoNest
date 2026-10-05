@@ -24,7 +24,7 @@ export const StoryTray: React.FC = () => {
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
-            Knowledge Sparks
+            Creator Stories
           </span>
           <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">
             · Quick educational moments

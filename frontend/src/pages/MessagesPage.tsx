@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, Send, Trash2 } from 'lucide-react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { chatApi, usersApi } from '../services/api';
+import { demoCreators, mockCreatorAvatar } from '../data/demoData';
 import { useApp } from '../context/AppContext';
 
 type ChatUser = { _id: string; name: string; profilePicture?: string };
@@ -10,9 +11,9 @@ type Message = { _id: string; senderId: ChatUser | string; receiverId: ChatUser 
 type InboxItem = { user: ChatUser; latestMessage: Message; unreadCount: number };
 const idOf = (value: ChatUser | string) => typeof value === 'string' ? value : value?._id;
 const demoPeople: ChatUser[] = [
-  { _id:'demo_friend_rahul', name:'Rahul Sharma', profilePicture:'/infonest-logo.png' },
-  { _id:'demo_friend_ananya', name:'Ananya Nair', profilePicture:'/infonest-logo.png' },
-  { _id:'demo_friend_kiran', name:'Kiran Raj', profilePicture:'/infonest-logo.png' },
+  { _id:'demo_friend_rahul', name:'Rahul Sharma', profilePicture:demoCreators[0].avatar },
+  { _id:'demo_friend_ananya', name:'Ananya Nair', profilePicture:demoCreators[1].avatar },
+  { _id:'demo_friend_kiran', name:'Kiran Raj', profilePicture:demoCreators[2].avatar },
 ];
 const demoThreads: Record<string, Message[]> = {
   demo_friend_rahul:[{_id:'rahul_1',senderId:'demo_friend_rahul',receiverId:'demo_user',message:'I put together a short checklist for the web security session.',status:'read',createdAt:new Date(Date.now()-86400000).toISOString()},{_id:'rahul_2',senderId:'demo_user',receiverId:'demo_friend_rahul',message:'Thanks! I’ll review it before Orbit tonight.',status:'read',createdAt:new Date(Date.now()-82800000).toISOString()},{_id:'rahul_3',senderId:'demo_friend_rahul',receiverId:'demo_user',message:'Perfect. We’ll cover session handling and common auth mistakes.',status:'delivered',createdAt:new Date(Date.now()-3600000).toISOString()}],
@@ -27,6 +28,11 @@ const demoInbox = (): InboxItem[] => demoPeople.map(user => {
   const thread=getDemoThread(user._id);
   return { user, latestMessage:thread[thread.length-1], unreadCount:thread.filter(message=>idOf(message.receiverId)==='demo_user' && message.status!=='read').length };
 });
+const avatarForChatUser = (user: ChatUser) => {
+  const profileImage = user.profilePicture || '';
+  const seed = String(user._id || user.name).split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return profileImage && !profileImage.includes('infonest-logo.png') ? profileImage : mockCreatorAvatar(user.name || 'InfoNest Member', seed);
+};
 const notifyUnreadState = (inbox: InboxItem[]) => window.dispatchEvent(new CustomEvent('infonest:message-unread-state', { detail: inbox.map(item=>({ id:item.user._id, name:item.user.name, count:item.unreadCount })) }));
 
 export const MessagesPage: React.FC = () => {
@@ -125,14 +131,14 @@ export const MessagesPage: React.FC = () => {
         <div className="p-5 border-b border-white/10"><h1 className="text-xl font-bold flex items-center gap-2"><MessageCircle className="text-purple-300" /> Messages</h1><p className="text-xs text-slate-400 mt-1">Your conversations</p></div>
         <div className="overflow-y-auto flex-1">
           {loading ? <p className="p-5 text-sm text-slate-400">Loading conversations…</p> : inbox.length ? inbox.map(item => <button key={item.user._id} onClick={() => void openConversation(item.user)} className={`w-full flex gap-3 p-4 text-left border-b border-white/5 hover:bg-white/5 ${selected?._id === item.user._id ? 'bg-purple-500/10' : ''}`}>
-            <img src={item.user.profilePicture || '/infonest-logo.png'} alt="" className="w-11 h-11 rounded-full object-cover bg-white/5" />
+            <img src={avatarForChatUser(item.user)} alt="" className="w-11 h-11 rounded-full object-cover bg-white/5" />
             <span className="min-w-0 flex-1"><span className="flex justify-between gap-2"><strong className="text-sm truncate">{item.user.name}</strong>{item.unreadCount > 0 && <span className="rounded-full bg-purple-500 px-2 text-[10px]">{item.unreadCount}</span>}</span><span className="block text-xs text-slate-400 truncate mt-1">{item.latestMessage.status === 'deleted' ? 'Message deleted' : item.latestMessage.message}</span><time className="block text-[10px] text-slate-500 mt-1">{new Date(item.latestMessage.createdAt).toLocaleString()}</time></span>
           </button>) : <p className="p-5 text-sm text-slate-400">No conversations yet. Visit a profile and choose Message to start one.</p>}
         </div>
       </aside>
       <div className={`${mobileConversation ? 'flex' : 'hidden sm:flex'} min-w-0 flex-1 flex-col`}>
         {selected ? <>
-          <header className="p-4 border-b border-white/10 flex items-center gap-3"><button className="sm:hidden text-slate-300" aria-label="Back to conversations" onClick={() => setMobileConversation(false)}><ArrowLeft /></button><img src={selected.profilePicture || '/infonest-logo.png'} alt="" className="w-10 h-10 rounded-full object-cover"/><div><h2 className="font-semibold">{selected.name}</h2><p className="text-xs text-slate-400">InfoNest member</p></div></header>
+          <header className="p-4 border-b border-white/10 flex items-center gap-3"><button className="sm:hidden text-slate-300" aria-label="Back to conversations" onClick={() => setMobileConversation(false)}><ArrowLeft /></button><img src={avatarForChatUser(selected)} alt="" className="w-10 h-10 rounded-full object-cover"/><div><h2 className="font-semibold">{selected.name}</h2><p className="text-xs text-slate-400">InfoNest member</p></div></header>
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
             {messages.map(message => { const mine = idOf(message.senderId) === currentUser.id || idOf(message.senderId) === 'demo_user'; return <div key={message._id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}><div className={`group max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 ${mine ? 'bg-purple-600/80 rounded-br-sm' : 'bg-white/10 rounded-bl-sm'}`}><p className="text-sm whitespace-pre-wrap break-words">{message.status === 'deleted' ? 'This message was deleted.' : message.message}</p><div className="flex items-center justify-end gap-2 mt-1"><time className="text-[10px] text-white/60">{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>{mine && message.status !== 'deleted' && <button onClick={() => void deleteMessage(message)} className="text-white/60 hover:text-rose-200" aria-label="Delete message"><Trash2 size={12}/></button>}{mine && <span className="text-[10px] text-white/60">{message.status === 'read' ? 'Read' : 'Sent'}</span>}</div></div></div>; })}
             {!messages.length && <p className="text-center text-sm text-slate-400 py-8">Start the conversation with {selected.name}.</p>}<div ref={endRef}/>

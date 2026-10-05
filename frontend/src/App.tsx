@@ -24,7 +24,6 @@ import { UserProfilePage } from './pages/UserProfilePage';
 import { PublicProfilePage } from './pages/PublicProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { PostDetailPage } from './pages/PostDetailPage';
-import { MissionsPage } from './pages/MissionsPage';
 import { OrbitRoomsPage } from './pages/OrbitRoomsPage';
 import { ChallengesPage } from './pages/ChallengesPage';
 import { CreatorDashboardPage } from './pages/creator/CreatorDashboardPage';
@@ -64,7 +63,7 @@ export default function App() {
           <Route path="/roadmap/:roadmapId" element={<Navigate to="/goals" replace />} />
           <Route path="/goals" element={<Protected><GoalsPage /></Protected>} />
           <Route path="/progress" element={<Navigate to="/goals" replace />} />
-          <Route path="/missions" element={<Protected><MissionsPage /></Protected>} />
+          <Route path="/missions" element={<Navigate to="/goals" replace />} />
           <Route path="/orbit-rooms" element={<Protected><OrbitRoomsPage /></Protected>} />
           <Route path="/challenges" element={<Protected><ChallengesPage /></Protected>} />
           <Route path="/saved" element={<Protected><SavedVaultPage /></Protected>} />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { StoryTray } from '../components/feed/StoryTray';
+import { LatestUpdates } from '../components/feed/LatestUpdates';
 import { FeedCard } from '../components/feed/FeedCard';
 import { useApp } from '../context/AppContext';
 import { Sparkles, Rocket, UploadCloud } from 'lucide-react';
@@ -32,7 +33,7 @@ export const FeedPage: React.FC = () => {
               Learn. Share. Grow. <span className="text-gradient-purple">Your Knowledge, Your Universe.</span>
             </h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-300 leading-relaxed">
-              Discover people and knowledge sparks, set your own learning goals, and build the knowledge space together. Content appears here only after creators and learners add it.
+              Discover creators, learning sparks, community updates, and practical knowledge shared across InfoNest.
             </p>
           </div>
         </div>
@@ -56,6 +57,8 @@ export const FeedPage: React.FC = () => {
         </div>
 
         <StoryTray />
+
+        <LatestUpdates />
 
         <AIRecommendationsPanel />
 
