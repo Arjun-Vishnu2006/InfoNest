@@ -42,7 +42,10 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({ story, onClo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xl p-4">
-      <div className="relative w-full max-w-md h-[680px] rounded-3xl overflow-hidden glass-panel border border-white/20 shadow-2xl flex flex-col justify-between bg-gradient-to-b from-slate-900 to-black">
+      <div
+        className="relative w-full max-w-md h-[680px] rounded-3xl overflow-hidden glass-panel border border-white/20 shadow-2xl flex flex-col justify-between bg-gradient-to-b from-slate-900 to-black"
+        style={{ backgroundImage: `linear-gradient(180deg, rgba(15,23,42,.82), rgba(0,0,0,.95)), url("${story.previewImage}")`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      >
         {/* Top Progress Bars */}
         <div className="absolute top-4 left-4 right-4 z-20 flex gap-1.5">
           {story.slides.map((_, idx) => (

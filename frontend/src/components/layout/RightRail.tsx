@@ -8,7 +8,6 @@ import { sounds } from '../../services/soundManager';
 export const RightRail: React.FC = () => {
   const {
     goals,
-    logStudyHours,
     toggleFollowCreator,
     creators,
     learningMissions,
@@ -48,7 +47,7 @@ export const RightRail: React.FC = () => {
               Weekly Goal Pace
             </span>
             <span className="text-xs font-mono font-semibold text-slate-300">
-              9.5h / 12h
+              {(primaryGoal.loggedHoursThisWeek || 0).toFixed(1)}h / {primaryGoal.targetHoursPerWeek || 0}h
             </span>
           </div>
 
@@ -82,19 +81,12 @@ export const RightRail: React.FC = () => {
                 Full-Stack Generative AI Architect
               </h4>
               <p className="text-[11px] text-cyan-400 font-mono mt-0.5">
-                2h 30m remaining this week
+                {Math.max(0, (primaryGoal.targetHoursPerWeek || 0) - (primaryGoal.loggedHoursThisWeek || 0)).toFixed(1)}h remaining this week
               </p>
             </div>
           </div>
 
           <div className="mt-3 pt-3 border-t border-white/5 flex gap-2">
-            <button
-              onClick={() => logStudyHours(primaryGoal.id, 1)}
-              className="flex-1 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-medium flex items-center justify-center gap-1 transition-all"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Log 1h Study</span>
-            </button>
             <Link
               to="/goals"
               onClick={() => sounds.playClick()}

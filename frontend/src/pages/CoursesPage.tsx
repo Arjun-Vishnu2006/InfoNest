@@ -2,17 +2,17 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useApp } from '../context/AppContext';
-import { BookOpen, Star, Users, Clock, Award, Play, CheckCircle2, ArrowRight } from 'lucide-react';
+import { BookOpen, Star, Users, Clock, Award, Play, CheckCircle2, ArrowRight, Target, ExternalLink } from 'lucide-react';
 import { sounds } from '../services/soundManager';
 
 export const CoursesPage: React.FC = () => {
-  const { courses, enrollInCourse } = useApp();
+  const { courses, addCourseToGoals, goals } = useApp();
   const [selectedCat, setSelectedCat] = useState('All');
   const [search, setSearch] = useState('');
 
-  const categories = ['All', 'Programming', 'Web Development', 'Cybersecurity', 'Cloud Computing', 'Data Science', 'Artificial Intelligence', 'Databases', 'DevOps', 'Networking', 'Software Engineering'];
+  const categories = ['All', 'Programming', 'Web Development', 'Cybersecurity', 'Networking', 'Linux', 'Cloud Computing', 'DevOps', 'Database', 'Data Science', 'AI', 'Artificial Intelligence', 'Software Engineering'];
 
-  const filteredCourses = courses.filter(c => (selectedCat === 'All' || c.category === selectedCat) && `${c.title} ${c.subtitle} ${c.creator.name}`.toLowerCase().includes(search.toLowerCase()));
+  const filteredCourses = courses.filter(c => (selectedCat === 'All' || c.category === selectedCat) && `${c.title} ${c.subtitle} ${c.description} ${c.category} ${c.creator.name} ${(c.skills || []).join(' ')}`.toLowerCase().includes(search.toLowerCase()));
 
   const enrolledCourses = courses.filter(c => c.isEnrolled);
   const featuredCourse = courses[0];
@@ -51,7 +51,7 @@ export const CoursesPage: React.FC = () => {
                   className="glass-panel rounded-2xl p-5 border border-emerald-500/20 bg-emerald-950/10 flex gap-4 items-center justify-between"
                 >
                   <div className="flex items-center gap-4 min-w-0">
-                    <img src={course.coverImage} alt={course.title} className="w-20 h-16 rounded-xl object-cover shrink-0" />
+                  <img src={course.thumbnail || course.coverImage} alt={course.title} className="w-20 h-16 rounded-xl object-cover shrink-0" />
                     <div className="min-w-0">
                       <h4 className="text-sm font-bold text-white truncate">{course.title}</h4>
                       <p className="text-xs text-slate-400 font-mono mt-0.5">Progress: {course.progressPercent}%</p>
@@ -100,8 +100,8 @@ export const CoursesPage: React.FC = () => {
         {filteredCourses.length === 0 ? (
           <div className="glass-panel rounded-3xl border border-white/10 p-10 text-center">
             <BookOpen className="w-10 h-10 text-purple-300 mx-auto" />
-            <h2 className="mt-4 text-lg font-bold text-white">Course Vault is empty</h2>
-            <p className="mt-2 text-sm text-slate-400 max-w-xl mx-auto">No sample courses are loaded. Add real learning content from the Creator workspace when you are ready.</p>
+            <h2 className="mt-4 text-lg font-bold text-white">No courses found</h2>
+            <p className="mt-2 text-sm text-slate-400 max-w-xl mx-auto">Try a different search term or category.</p>
           </div>
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -112,7 +112,7 @@ export const CoursesPage: React.FC = () => {
             >
               <div>
                 <div className="relative aspect-video w-full bg-slate-900 overflow-hidden">
-                  <img src={course.coverImage} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={course.thumbnail || course.coverImage} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
                   <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur text-[10px] font-mono text-cyan-300">
                     {course.level}
@@ -144,22 +144,17 @@ export const CoursesPage: React.FC = () => {
                       <Star className="w-3 h-3 fill-amber-400" /> {course.rating}
                     </span>
                     <span>·</span>
-                    <span>{course.studentsCount.toLocaleString()} students</span>
+                    <span>{(course.learners || course.studentsCount).toLocaleString()} learners</span>
                     <span>·</span>
                     <span>{course.estimatedHours}h</span>
                   </div>
                 </div>
               </div>
 
-              <div className="p-5 pt-0">
-                <Link
-                  to={`/course/${course.id}`}
-                  onClick={() => sounds.playClick()}
-                  className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-glow-purple transition-all"
-                >
-                  <span>{course.isEnrolled ? 'Resume Syllabus' : 'View Course Syllabus'}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+              <div className="p-5 pt-0 grid grid-cols-2 gap-2">
+                <Link to={`/course/${course.id}`} onClick={() => sounds.playClick()} className="py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1"><span>Open Course</span><ArrowRight className="w-3.5 h-3.5" /></Link>
+                <a href={course.youtubeUrl} target="_blank" rel="noopener noreferrer" className="py-2.5 bg-gradient-to-r from-rose-600 to-red-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1"><Play className="w-3.5 h-3.5"/><span>Watch</span><ExternalLink className="w-3 h-3"/></a>
+                <button onClick={() => addCourseToGoals(course.id)} disabled={goals.some(goal => goal.courseId === course.id)} className="col-span-2 py-2 bg-cyan-500/10 border border-cyan-400/20 rounded-xl text-xs font-semibold text-cyan-200 disabled:text-emerald-300 disabled:border-emerald-400/20"><Target className="w-3 h-3 inline mr-1"/>{goals.some(goal => goal.courseId === course.id) ? 'Added to Goals' : 'Add to Goals'}</button>
               </div>
             </div>
           ))}

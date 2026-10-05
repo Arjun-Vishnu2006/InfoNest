@@ -56,6 +56,7 @@ export interface Creator {
   knowledgeScore: number;
   expertiseTags: string[];
   recentDropsCount?: number;
+  recentContent?: string[];
   weeklyGrowth?: {
     followers: string;
     views: string;
@@ -90,6 +91,8 @@ export interface Story {
   categoryColor?: string;
   previewImage: string;
   hasUnseen: boolean;
+  timestamp?: string;
+  viewed?: boolean;
   slides: StorySlide[];
 }
 
@@ -314,6 +317,15 @@ export interface Course {
   reviews: CourseReview[];
   isEnrolled: boolean;
   progressPercent: number;
+  instructor?: string;
+  learners?: number;
+  duration?: string;
+  difficulty?: string;
+  youtubeUrl?: string;
+  thumbnail?: string;
+  skills?: string[];
+  completedLessons?: number;
+  totalLessons?: number;
 }
 
 export interface UserGoal {
@@ -334,6 +346,11 @@ export interface UserGoal {
   completedTasks: number;
   totalTasks: number;
   weeklyHistory: number[];
+  courseId?: string;
+  instructor?: string;
+  completedLessons?: number;
+  totalLessons?: number;
+  startDate?: string;
 }
 
 export interface NotificationItem {

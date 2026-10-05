@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useApp } from '../context/AppContext';
 import { HolographicCard3D } from '../components/3d/HolographicCard3D';
@@ -15,13 +15,14 @@ import {
   ChevronDown,
   ChevronUp,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  ExternalLink,
+  Target
 } from 'lucide-react';
 
 export const CourseDetailPage: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
-  const navigate = useNavigate();
-  const { courses, enrollInCourse } = useApp();
+  const { courses, addCourseToGoals, markCourseLessonComplete, goals } = useApp();
 
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>('mod_1');
 
@@ -39,14 +40,6 @@ export const CourseDetailPage: React.FC = () => {
       </MainLayout>
     );
   }
-
-  const handleEnrollOrResume = () => {
-    if (!course.isEnrolled) {
-      enrollInCourse(course.id);
-    }
-    // Navigate to first lecture
-    navigate(`/lecture/lec_1`);
-  };
 
   return (
     <MainLayout showRightRail={false}>
@@ -104,27 +97,21 @@ export const CourseDetailPage: React.FC = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-4 pt-4">
-                <button
-                  onClick={handleEnrollOrResume}
-                  className="px-8 py-3.5 bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-black rounded-2xl text-sm shadow-glow-purple transition-all flex items-center gap-2"
-                >
-                  <Play className="w-4 h-4 fill-white" />
-                  <span>{course.isEnrolled ? `Resume Learning (${course.progressPercent}%)` : 'Enroll in Course'}</span>
-                </button>
+              <div className="flex flex-wrap gap-3 pt-4">
+                <a href={course.youtubeUrl} target="_blank" rel="noopener noreferrer" className="px-6 py-3.5 bg-gradient-to-r from-rose-600 to-red-500 text-white font-black rounded-2xl text-sm shadow-glow-purple flex items-center gap-2"><Play className="w-4 h-4 fill-white"/><span>Watch / Start Course on YouTube</span><ExternalLink className="w-4 h-4"/></a>
+                <button onClick={() => addCourseToGoals(course.id)} disabled={goals.some(goal => goal.courseId === course.id)} className="px-5 py-3.5 bg-cyan-500/10 border border-cyan-400/30 text-cyan-100 disabled:text-emerald-300 rounded-2xl text-sm font-bold flex items-center gap-2"><Target className="w-4 h-4"/>{goals.some(goal => goal.courseId === course.id) ? 'In My Goals' : 'Add to Goals'}</button>
+                <button onClick={() => markCourseLessonComplete(course.id)} className="px-5 py-3.5 bg-white/5 border border-white/10 text-white rounded-2xl text-sm font-semibold">Mark next lesson complete</button>
               </div>
+              <p className="text-xs text-slate-400">{course.completedLessons || 0} / {course.totalLessons || 20} lessons · {course.progressPercent}% complete</p>
             </div>
 
             {/* Right: Course Preview Card */}
             <div className="relative rounded-2xl overflow-hidden aspect-video lg:aspect-[4/3] bg-slate-900 border border-white/10 shadow-2xl">
-              <img src={course.coverImage} alt={course.title} className="w-full h-full object-cover" />
+              <img src={course.thumbnail || course.coverImage} alt={course.title} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <button
-                  onClick={handleEnrollOrResume}
-                  className="w-16 h-16 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-glow-purple hover:scale-110 transition-transform"
-                >
+                <a href={course.youtubeUrl} target="_blank" rel="noopener noreferrer" aria-label="Watch this course on YouTube" className="w-16 h-16 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-glow-purple hover:scale-110 transition-transform">
                   <Play className="w-7 h-7 fill-white translate-x-0.5" />
-                </button>
+                </a>
               </div>
             </div>
           </div>

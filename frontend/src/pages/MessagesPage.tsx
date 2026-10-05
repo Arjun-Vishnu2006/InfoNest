@@ -19,7 +19,15 @@ const demoThreads: Record<string, Message[]> = {
   demo_friend_ananya:[{_id:'ananya_1',senderId:'demo_user',receiverId:'demo_friend_ananya',message:'How did you structure the React workshop?',status:'read',createdAt:new Date(Date.now()-7200000).toISOString()},{_id:'ananya_2',senderId:'demo_friend_ananya',receiverId:'demo_user',message:'Small components, clear state boundaries, and one end-to-end exercise. I sent the notes too.',status:'delivered',createdAt:new Date(Date.now()-3000000).toISOString()}],
   demo_friend_kiran:[{_id:'kiran_1',senderId:'demo_friend_kiran',receiverId:'demo_user',message:'For the cloud workshop, bring a test account or just follow along with the diagrams.',status:'delivered',createdAt:new Date(Date.now()-172800000).toISOString()},{_id:'kiran_2',senderId:'demo_user',receiverId:'demo_friend_kiran',message:'I’ll follow along. Looking forward to the IAM examples.',status:'read',createdAt:new Date(Date.now()-169200000).toISOString()}],
 };
-const demoInbox = (): InboxItem[] => demoPeople.map(user => { const thread = demoThreads[user._id]; return { user, latestMessage:thread[thread.length-1], unreadCount:user._id==='demo_friend_ananya'?1:0 }; });
+const getDemoThread = (userId: string): Message[] => {
+  try { const saved=localStorage.getItem(`infonest_demo_chat_${userId}`); if(saved) return JSON.parse(saved) as Message[]; } catch { /* use seed */ }
+  return demoThreads[userId] || [];
+};
+const demoInbox = (): InboxItem[] => demoPeople.map(user => {
+  const thread=getDemoThread(user._id);
+  return { user, latestMessage:thread[thread.length-1], unreadCount:thread.filter(message=>idOf(message.receiverId)==='demo_user' && message.status!=='read').length };
+});
+const notifyUnreadState = (inbox: InboxItem[]) => window.dispatchEvent(new CustomEvent('infonest:message-unread-state', { detail: inbox.map(item=>({ id:item.user._id, name:item.user.name, count:item.unreadCount })) }));
 
 export const MessagesPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -37,14 +45,20 @@ export const MessagesPage: React.FC = () => {
   const loadInbox = useCallback(async () => {
     try {
       const response = await chatApi.inbox();
-      setInbox(response.data?.data || []);
-    } catch { setInbox(demoInbox()); setError(''); }
+      const conversations: InboxItem[] = response.data?.data || [];
+      setInbox(conversations.length ? conversations : demoInbox());
+      if (!conversations.length) notifyUnreadState(demoInbox());
+    } catch { const fallback=demoInbox(); setInbox(fallback); notifyUnreadState(fallback); setError(''); }
     finally { setLoading(false); }
   }, []);
 
   const openConversation = useCallback(async (user: ChatUser) => {
     setSelected(user); setMobileConversation(true); setError('');
-    if (user._id.startsWith('demo_friend_')) { const saved = localStorage.getItem(`infonest_demo_chat_${user._id}`); const thread = saved ? JSON.parse(saved) as Message[] : demoThreads[user._id]; setMessages(thread); setError(''); return; }
+    if (user._id.startsWith('demo_friend_')) {
+      const thread=getDemoThread(user._id).map(message => idOf(message.receiverId)==='demo_user' && message.status!=='read' ? {...message,status:'read' as const} : message);
+      localStorage.setItem(`infonest_demo_chat_${user._id}`,JSON.stringify(thread));
+      setMessages(thread); const updated=demoInbox(); setInbox(updated); notifyUnreadState(updated); setError(''); return;
+    }
     try {
       const response = await chatApi.getConversation(user._id);
       const thread: Message[] = response.data?.data || [];
@@ -52,6 +66,9 @@ export const MessagesPage: React.FC = () => {
       await Promise.all(thread.filter(message => idOf(message.receiverId) === currentUser.id && message.status !== 'read').map(message => chatApi.markMessageRead(message._id).catch(() => undefined)));
       setMessages(thread.map(message => idOf(message.receiverId) === currentUser.id ? { ...message, status: 'read' } : message));
       await loadInbox();
+      const inboxResponse=await chatApi.inbox();
+      const conversations: InboxItem[]=inboxResponse.data?.data || [];
+      notifyUnreadState(conversations);
     } catch { if (user._id.startsWith('demo_friend_')) setMessages(demoThreads[user._id]); else { setMessages([]); setError('This conversation could not be loaded.'); } }
   }, [currentUser.id, loadInbox]);
 
@@ -60,6 +77,8 @@ export const MessagesPage: React.FC = () => {
   useEffect(() => {
     const userId = searchParams.get('userId');
     if (!userId) return;
+    const demoPerson=demoPeople.find(person=>person._id===userId);
+    if (demoPerson) { void openConversation(demoPerson); return; }
     let active = true;
     usersApi.byId(userId).then(response => {
       const data = response.data?.data?.user;
@@ -77,7 +96,7 @@ export const MessagesPage: React.FC = () => {
     setSending(true); setError('');
     if (selected._id.startsWith('demo_friend_')) {
       const sent: Message = { _id:`demo_msg_${Date.now()}`, senderId:'demo_user', receiverId:selected._id, message:text, status:'sent', createdAt:new Date().toISOString() };
-      const next=[...messages,sent]; setMessages(next); localStorage.setItem(`infonest_demo_chat_${selected._id}`,JSON.stringify(next)); setDraft(''); setInbox(demoInbox().map(item => item.user._id===selected._id ? {...item,latestMessage:sent} : item)); setSending(false); return;
+      const next=[...messages,sent]; setMessages(next); localStorage.setItem(`infonest_demo_chat_${selected._id}`,JSON.stringify(next)); setDraft(''); const updated=demoInbox(); setInbox(updated); notifyUnreadState(updated); setSending(false); return;
     }
     try {
       const response = await chatApi.sendMessage(selected._id, text);

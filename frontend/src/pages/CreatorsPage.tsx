@@ -9,7 +9,7 @@ export const CreatorsPage: React.FC = () => {
   const { creators, toggleFollowCreator } = useApp();
   const [filterSpecialty, setFilterSpecialty] = useState('All');
 
-  const specialties = ['All', 'Reasoning Models', 'High-Throughput', '3D Web', 'ZK-SNARKs', 'React 19'];
+  const specialties = ['All', 'Cybersecurity', 'Full Stack Development', 'Cloud Security', 'Data Science', 'DevOps', 'Networking', 'Linux', 'Artificial Intelligence'];
 
   const filteredCreators = filterSpecialty === 'All'
     ? creators
@@ -60,11 +60,11 @@ export const CreatorsPage: React.FC = () => {
             <p className="text-sm text-slate-400">Be the first creator to share knowledge on InfoNest!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory">
             {filteredCreators.map(creator => (
               <div
                 key={creator.id}
-                className="glass-panel rounded-2xl border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-purple-500/40 transition-all duration-300"
+                className="glass-panel rounded-2xl border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-purple-500/40 transition-all duration-300 shrink-0 w-[min(86vw,340px)] snap-start"
               >
                 <div>
                   {/* Cover Image */}
@@ -137,7 +137,7 @@ export const CreatorsPage: React.FC = () => {
                 {/* Stats Footer */}
                 <div className="p-4 bg-white/[0.02] border-t border-white/5 flex items-center justify-between text-xs font-mono text-slate-400">
                   <span>{creator.followersCount.toLocaleString()} followers</span>
-                  <span>{creator.studentCount.toLocaleString()} students</span>
+                  <span>{creator.studentCount.toLocaleString()} students · {creator.recentDropsCount || 0} posts</span>
                   <Link
                     to={`/creator/${creator.username}`}
                     onClick={() => sounds.playClick()}

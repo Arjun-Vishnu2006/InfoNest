@@ -24,7 +24,7 @@ import {
 import { sounds } from '../services/soundManager';
 import { usersApi, goalsApi, contentApi, roadmapsApi, notificationsApi } from '../services/api';
 import { useAuth } from './AuthContext';
-import { demoCreators, demoCourses, demoGoals, demoNotifications, demoOrbitRooms, demoPosts } from '../data/demoData';
+import { demoCreators, demoCourses, demoGoals, demoNotifications, demoOrbitRooms, demoPosts, demoStories } from '../data/demoData';
 
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE !== 'false';
 
@@ -92,6 +92,8 @@ interface AppContextType {
 
   // Learning interactions
   enrollInCourse: (courseId: string) => void;
+  addCourseToGoals: (courseId: string) => void;
+  markCourseLessonComplete: (courseId: string) => void;
   markLectureComplete: (courseId: string, lectureId: string) => void;
   toggleMilestoneComplete: (roadmapId: string, milestoneId: string) => void;
   cloneRoadmapToMyGoals: (roadmap: RoadmapData) => void;
@@ -292,15 +294,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // All data states start EMPTY — no mock data
   const [creators, setCreators] = useState<Creator[]>(DEMO_MODE ? demoCreators : []);
   const [posts, setPosts] = useState<Post[]>(DEMO_MODE ? demoPosts : []);
-  const [stories] = useState<Story[]>([]);
-  const [courses, setCourses] = useState<Course[]>(DEMO_MODE ? demoCourses : []);
+  const [stories, setStories] = useState<Story[]>(() => {
+    if (!DEMO_MODE) return [];
+    try { const saved = JSON.parse(localStorage.getItem('infonest_demo_stories') || 'null') as Story[] | null; return saved?.length ? saved : demoStories; } catch { return demoStories; }
+  });
+  const [courses, setCourses] = useState<Course[]>(() => {
+    if (!DEMO_MODE) return [];
+    try { const saved = JSON.parse(localStorage.getItem('infonest_demo_courses') || 'null') as Course[] | null; return saved?.length ? demoCourses.map(course => ({ ...course, ...(saved.find(item => item.id === course.id) || {}) })) : demoCourses; } catch { return demoCourses; }
+  });
   const [roadmaps, setRoadmaps] = useState<RoadmapData[]>([]);
   const [activeRoadmap, setActiveRoadmap] = useState<RoadmapData | null>(null);
   const [goals, setGoals] = useState<UserGoal[]>(() => {
-    try { const saved = localStorage.getItem('infonest_demo_goals'); return DEMO_MODE ? (saved ? JSON.parse(saved) : demoGoals) : []; } catch { return demoGoals; }
+    try {
+      const saved = JSON.parse(localStorage.getItem('infonest_demo_goals') || 'null') as UserGoal[] | null;
+      if (!DEMO_MODE) return [];
+      if (saved) {
+        if (!saved.length) return [];
+        const linked = saved.filter(goal => goal.courseId && demoCourses.some(course => course.id === goal.courseId));
+        return linked.length ? linked : demoGoals;
+      }
+      return demoGoals;
+    } catch { return demoGoals; }
   });
   const [notifications, setNotifications] = useState<NotificationItem[]>(DEMO_MODE ? demoNotifications : []);
   const [creatorContent, setCreatorContent] = useState<ContentItem[]>([]);
+
+  useEffect(() => {
+    if (!DEMO_MODE) return;
+    const syncMessageNotifications = (event: Event) => {
+      const detail = (event as CustomEvent<Array<{ id:string; name:string; count:number }>>).detail || [];
+      setNotifications(previous => {
+        const kept = previous.filter(item => !item.id.startsWith('demo_message_') && item.id !== 'demo_notice_1');
+        const unread = detail.filter(item => item.count > 0).map(item => ({
+          id:`demo_message_${item.id}`, category:'social' as const, title:`Unread message from ${item.name}`,
+          description:`${item.count} unread ${item.count===1?'message':'messages'}. Open the conversation to mark as read.`,
+          timestamp:'Just now', read:false, actionUrl:`/messages?userId=${encodeURIComponent(item.id)}`,
+        }));
+        return [...unread, ...kept];
+      });
+    };
+    window.addEventListener('infonest:message-unread-state', syncMessageNotifications);
+    return () => window.removeEventListener('infonest:message-unread-state', syncMessageNotifications);
+  }, []);
 
   // =====================================================
   // LOAD REAL DATA FROM BACKEND
@@ -407,7 +442,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 3. UI and Audio States
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState('All');
-  const [activeStory, setActiveStory] = useState<Story | null>(null);
+  const [activeStory, setActiveStoryState] = useState<Story | null>(null);
+  const setActiveStory = (story: Story | null) => {
+    if (story) {
+      const next = stories.map(item => item.id === story.id ? { ...item, hasUnseen:false, viewed:true } : item);
+      setStories(next);
+      if (DEMO_MODE) localStorage.setItem('infonest_demo_stories', JSON.stringify(next));
+      setActiveStoryState(next.find(item => item.id === story.id) || story);
+    } else setActiveStoryState(null);
+  };
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
   const [isMuted, setIsMuted] = useState(false);
@@ -687,6 +730,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     confetti({ particleCount: 60, spread: 60, origin: { y: 0.5 } });
     setCurrentUser(u => ({ ...u, enrolledCoursesCount: u.enrolledCoursesCount + 1 }));
     showToast('Enrolled in Masterclass! Course added to your vault.');
+  };
+
+  const addCourseToGoals = (courseId: string) => {
+    const course = courses.find(item => item.id === courseId);
+    if (!course) return;
+    if (goals.some(goal => goal.courseId === course.id)) { showToast('This course is already in your goals.', 'info'); return; }
+    const goal: UserGoal = {
+      id:`demo_goal_${course.id}`, courseId:course.id, title:course.title, roadmapTitle:course.title,
+      instructor:course.instructor || course.creator.name, category:course.category, description:course.description,
+      status:'active', targetHoursPerWeek:6, loggedHoursThisWeek:0, targetCompletionDate:'Flexible', startDate:new Date().toISOString(),
+      streakDays:0, completedTasks:course.completedLessons || 0, totalTasks:course.totalLessons || 20,
+      completedLessons:course.completedLessons || 0, totalLessons:course.totalLessons || 20,
+      progressPercent:course.progressPercent || 0, weeklyHistory:[0,0,0,0,0,0,0],
+    };
+    const next = [goal, ...goals];
+    setGoals(next);
+    if (DEMO_MODE) localStorage.setItem('infonest_demo_goals', JSON.stringify(next));
+    setCourses(previous => {
+      const updated = previous.map(item => item.id === courseId ? { ...item, isEnrolled:true } : item);
+      if (DEMO_MODE) localStorage.setItem('infonest_demo_courses', JSON.stringify(updated));
+      return updated;
+    });
+    showToast(`${course.title} added to Goals.`, 'success');
+  };
+
+  const markCourseLessonComplete = (courseId: string) => {
+    const current = courses.find(item => item.id === courseId);
+    if (!current) return;
+    const totalLessons = current.totalLessons || 20;
+    const completedLessons = Math.min(totalLessons, (current.completedLessons || 0) + 1);
+    const course = { ...current, isEnrolled:true, totalLessons, completedLessons, progressPercent:Math.round(completedLessons / totalLessons * 100) };
+    const updatedCourses = courses.map(item => item.id === courseId ? course : item);
+    setCourses(updatedCourses);
+    if (DEMO_MODE) localStorage.setItem('infonest_demo_courses', JSON.stringify(updatedCourses));
+    setGoals(previous => {
+      const updated = previous.map(goal => goal.courseId === courseId ? { ...goal, completedLessons:course.completedLessons, totalLessons:course.totalLessons, completedTasks:course.completedLessons || 0, totalTasks:course.totalLessons || 20, progressPercent:course.progressPercent } : goal);
+      if (DEMO_MODE) localStorage.setItem('infonest_demo_goals', JSON.stringify(updated));
+      return updated;
+    });
+    showToast(`${course.title}: ${course.completedLessons}/${course.totalLessons} lessons complete.`, 'success');
   };
 
   const markLectureComplete = (courseId: string, lectureId: string) => {
@@ -996,6 +1079,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeVaultModalPost,
         setActiveVaultModalPost,
         enrollInCourse,
+        addCourseToGoals,
+        markCourseLessonComplete,
         markLectureComplete,
         toggleMilestoneComplete,
         cloneRoadmapToMyGoals,
